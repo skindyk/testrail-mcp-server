@@ -1,4 +1,3 @@
-import { readFileSync } from 'fs';
 import { z } from 'zod';
 
 const TestRailCredentialsSchema = z.object({
@@ -11,24 +10,15 @@ const TestRailCredentialsSchema = z.object({
 export type TestRailCredentials = z.infer<typeof TestRailCredentialsSchema>;
 
 export function parseCredentials(): TestRailCredentials {
-  const configPath = process.env.TESTRAIL_CONFIG_PATH || './mcp.json';
+  // Read credentials from environment variables
+  const url = process.env.TESTRAIL_URL;
+  const username = process.env.TESTRAIL_USERNAME;
+  const password = process.env.TESTRAIL_PASSWORD;
+  const apiKey = process.env.TESTRAIL_APIKEY; // Optional
 
-  try {
-    const configContent = readFileSync(configPath, 'utf-8');
-    const config = JSON.parse(configContent);
-
-    // Look for TestRail configuration in the MCP config
-    const testRailConfig = config.testRail || config.testrail || config.TestRail;
-
-    if (!testRailConfig) {
-      throw new Error('TestRail configuration not found in mcp.json. Please add a "testRail" section with url, username, and password/apiKey');
-    }
-
-    return TestRailCredentialsSchema.parse(testRailConfig);
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error(`Failed to parse TestRail credentials: ${error.message}`);
-    }
-    throw error;
+  if (!url || !username || !password) {
+    throw new Error('Missing required TestRail environment variables: TESTRAIL_URL, TESTRAIL_USERNAME, TESTRAIL_PASSWORD');
   }
+
+  return TestRailCredentialsSchema.parse({ url, username, password, apiKey });
 }

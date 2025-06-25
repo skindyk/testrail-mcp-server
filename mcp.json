@@ -1,7 +1,0 @@
-{
-  "testRail": {
-    "url": "https://your-testrail-instance.testrail.io",
-    "username": "your-email@company.com",
-    "password": "your-api-key"
-  }
-}

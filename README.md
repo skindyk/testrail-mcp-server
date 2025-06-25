@@ -40,20 +40,7 @@ A Model Context Protocol (MCP) server that provides seamless integration between
 
 ## ⚙️ Configuration
 
-1.  **TestRail Credentials**
-    Edit `mcp.json` file in the project root with your TestRail credentials:
-
-    ```json
-    {
-      "testRail": {
-        "url": "https://your-testrail-instance.testrail.io",
-        "username": "your-email@company.com",
-        "password": "your-api-key-or-password"
-      }
-    }
-    ```
-
-2.  **MCP Client Configuration**
+1.  **MCP Client Configuration**
     Configure the MCP server in your MCP client settings (IntelliJ IDEA GitHub Copilot example):
 
     ```json
@@ -63,13 +50,15 @@ A Model Context Protocol (MCP) server that provides seamless integration between
           "command": "node",
           "args": ["C:\\path\\to\\your\\testrail-mcp\\wrapper.cjs"],
           "env": {
-            "TESTRAIL_CONFIG_PATH": "C:\\path\\to\\your\\testrail-mcp\\mcp.json"
+            "TESTRAIL_URL": "https://your-testrail-instance.testrail.io",
+            "TESTRAIL_USERNAME": "your-email@company.com",
+            "TESTRAIL_PASSWORD": "your-api-key-or-password"
           }
         }
       }
     }
     ```
-    Replace the paths with your actual project location.
+    Set the environment variables above with your actual TestRail credentials and path to.
 
 ## 🎯 Usage Examples
 
