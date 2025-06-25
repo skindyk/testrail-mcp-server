@@ -1,2 +1,162 @@
-# testrail-mcp-server
+# TestRail MCP Server
+
 A Model Context Protocol (MCP) server that provides seamless integration between MCP clients and TestRail API. This server enables natural language interactions with TestRail for test management operations.
+
+## 🚀 Features
+
+- **Complete TestRail API Coverage**: Access all major TestRail endpoints through natural language.
+- **Project Management**: Create, read, update, and delete projects.
+- **Test Case Management**: Manage test cases, suites, and sections.
+- **Test Execution**: Create and manage test runs, add results, and track progress.
+- **Test Planning**: Handle test plans and plan entries.
+- **User & Configuration**: Access user data, priorities, statuses, and custom fields.
+- **Reporting**: Generate and run reports.
+
+## 📋 Prerequisites
+
+- **Node.js**: Version 18.0.0 or higher
+- **TypeScript**: Version 5.0.0 or higher
+- **TestRail Account**: Active TestRail instance with API access
+
+## 🛠️ Installation
+
+1.  **Clone the project**:
+
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+
+3.  **Build the project**:
+    ```bash
+    npm run build
+    ```
+
+4.  **Test the server (optional)**:
+    ```bash
+    node dist/index.js
+    ```
+    You should see: `TestRail MCP server running on stdio`
+
+## ⚙️ Configuration
+
+1.  **TestRail Credentials**
+    Edit `mcp.json` file in the project root with your TestRail credentials:
+
+    ```json
+    {
+      "testRail": {
+        "url": "https://your-testrail-instance.testrail.io",
+        "username": "your-email@company.com",
+        "password": "your-api-key-or-password"
+      }
+    }
+    ```
+
+2.  **MCP Client Configuration**
+    Configure the MCP server in your MCP client settings (IntelliJ IDEA GitHub Copilot example):
+
+    ```json
+    {
+      "servers": {
+        "testrail": {
+          "command": "node",
+          "args": ["C:\\path\\to\\your\\testrail-mcp\\wrapper.cjs"],
+          "env": {
+            "TESTRAIL_CONFIG_PATH": "C:\\path\\to\\your\\testrail-mcp\\mcp.json"
+          }
+        }
+      }
+    }
+    ```
+    Replace the paths with your actual project location.
+
+## 🎯 Usage Examples
+
+Once configured, you can use natural language commands in MCP clients like IntelliJ IDEA GitHub Copilot to interact with TestRail. Here are some examples:
+
+### Project Management
+- "Get all projects from TestRail"
+- "Show me details for project 5"
+- "Create a new project called 'Mobile App Testing'"
+
+### Test Case Management
+- "Show me test cases for project 1"
+- "Get test case details for case ID 123"
+- "Create a new test case in section 45"
+
+### Test Execution
+- "Create a new test run for project 2"
+- "Add a passed result for test case 789"
+- "Show me all test runs for project 3"
+
+### Test Planning
+- "Get all test plans for project 1"
+- "Create a new test plan called 'Release 2.0 Testing'"
+- "Show me test plan details for plan 15"
+
+### Reporting
+- "Get available reports for project 2"
+- "Run report template 5"
+
+## 🔧 Available Tools
+
+The server provides 50+ tools covering all major TestRail operations:
+
+-   **Projects**: `get_projects`, `get_project`, `add_project`, `update_project`, `delete_project`
+-   **Test Suites**: `get_suites`, `get_suite`, `add_suite`, `update_suite`, `delete_suite`
+-   **Test Cases**: `get_cases`, `get_case`, `add_case`, `update_case`, `delete_case`
+-   **Test Runs**: `get_runs`, `get_run`, `add_run`, `update_run`, `close_run`, `delete_run`
+-   **Test Results**: `get_results`, `add_result`, `add_results`, `get_results_for_case`, `get_results_for_run`
+-   **Test Plans**: `get_plans`, `get_plan`, `add_plan`, `update_plan`, `close_plan`, `delete_plan`
+-   **Sections & Organization**: `get_sections`, `get_section`, `add_section`, `update_section`, `delete_section`
+-   **Milestones**: `get_milestones`, `get_milestone`, `add_milestone`, `update_milestone`, `delete_milestone`
+-   **Users & Configuration**: `get_users`, `get_user`, `get_case_fields`, `get_priorities`, `get_statuses`
+-   **Reporting**: `get_reports`, `run_report`
+
+## 📁 Project Structure
+
+```
+testrail-mcp/
+├── src/
+│   ├── index.ts              # Main server entry point
+│   ├── config.ts             # Configuration management
+│   ├── testrail-client.ts    # TestRail API client
+│   └── tools/
+│       └── index.ts          # Tool definitions
+├── dist/                     # Compiled JavaScript files
+├── wrapper.cjs               # CommonJS wrapper for IntelliJ
+├── mcp.json                  # TestRail credentials
+├── package.json              # Node.js dependencies
+├── tsconfig.json             # TypeScript configuration
+└── README.md                 # This file
+```
+
+## 🚨 Troubleshooting
+
+### Server Won't Start
+-   Check Node.js version: `node --version` (should be 18+)
+-   Verify build completed: `npm run build`
+-   Test credentials: Ensure `mcp.json` has correct TestRail URL and credentials
+
+### MCP Client Connection Issues
+-   Verify paths in MCP configuration are absolute and correct
+-   Check that `wrapper.cjs` exists and is executable
+-   Ensure `TESTRAIL_CONFIG_PATH` points to your `mcp.json` file
+-   Restart MCP client after configuration changes
+
+### API Errors
+-   Verify TestRail instance URL is accessible
+-   Check that API access is enabled in your TestRail instance
+-   Ensure your user account has appropriate permissions
+-   Use API key instead of password for authentication
+
+## 📄 License
+
+MIT License.
+
+## 🔗 Related Links
+
+-   [TestRail API Documentation](https://www.gurock.com/testrail/docs/api)
+-   [Model Context Protocol](https://microsoft.github.io/language-server-protocol/specifications/mcp/0.9.0/specification/)
+-   [IntelliJ IDEA GitHub Copilot Plugin](https://plugins.jetbrains.com/plugin/17718-github-copilot)
