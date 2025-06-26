@@ -115,7 +115,6 @@ testrail-mcp/
 │       └── index.ts          # Tool definitions
 ├── dist/                     # Compiled JavaScript files
 ├── wrapper.cjs               # CommonJS wrapper for IntelliJ
-├── mcp.json                  # TestRail credentials
 ├── package.json              # Node.js dependencies
 ├── tsconfig.json             # TypeScript configuration
 └── README.md                 # This file
@@ -126,7 +125,6 @@ testrail-mcp/
 ### Server Won't Start
 -   Check Node.js version: `node --version` (should be 18+)
 -   Verify build completed: `npm run build`
--   Test credentials: Ensure `mcp.json` has correct TestRail URL and credentials
 
 ### MCP Client Connection Issues
 -   Verify paths in MCP configuration are absolute and correct
