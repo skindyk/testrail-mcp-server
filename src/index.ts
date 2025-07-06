@@ -9,13 +9,28 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { TestRailClient } from "./testrail-client.js";
 import { parseCredentials } from "./config.js";
-import { tools } from "./tools/index.js";
+import { tools as allTools } from "./tools/index.js";
+
+function getAllowedTools(): string[] | null {
+  const allowed = process.env.MCP_TOOLS;
+  if (!allowed) return null;
+  try {
+    return JSON.parse(allowed);
+  } catch {
+    return allowed.split(',').map(t => t.trim());
+  }
+}
 
 class TestRailMCPServer {
   private server: Server;
   private testRailClient: TestRailClient | null = null;
+  private tools: Tool[];
 
   constructor() {
+    const allowedTools = getAllowedTools();
+    this.tools = allowedTools
+        ? allTools.filter(t => allowedTools.includes(t.name))
+        : allTools;
     this.server = new Server({
       name: "testrail-mcp-server",
       version: "1.0.0",
@@ -27,7 +42,7 @@ class TestRailMCPServer {
   private setupToolHandlers() {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
-        tools: tools as Tool[],
+        tools: this.tools as Tool[],
       };
     });
 
@@ -42,7 +57,7 @@ class TestRailMCPServer {
         }
 
         // Find and execute the appropriate tool
-        const tool = tools.find(t => t.name === name);
+        const tool = this.tools.find(t => t.name === name);
         if (!tool) {
           throw new Error(`Unknown tool: ${name}`);
         }

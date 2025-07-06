@@ -100,8 +100,36 @@ The server provides 50+ tools covering all major TestRail operations:
 -   **Test Plans**: `get_plans`, `get_plan`, `add_plan`, `update_plan`, `close_plan`, `delete_plan`
 -   **Sections & Organization**: `get_sections`, `get_section`, `add_section`, `update_section`, `delete_section`
 -   **Milestones**: `get_milestones`, `get_milestone`, `add_milestone`, `update_milestone`, `delete_milestone`
--   **Users & Configuration**: `get_users`, `get_user`, `get_case_fields`, `get_priorities`, `get_statuses`
+-   **Users & Configuration**: `get_users`, `get_user`, `get_user_by_email`, `get_case_fields`, `get_case_types`, `get_priorities`, `get_statuses`, `get_templates`, `get_result_fields`
 -   **Reporting**: `get_reports`, `run_report`
+
+## 🛡️ Limiting Available Tools with MCP_TOOLS
+
+If your MCP client does not support tool list controls, you can restrict which tools are available to the client by setting the `MCP_TOOLS` environment variable. This is useful for security or to simplify the toolset for specific use cases.
+
+- **How to use:**
+  - Set `MCP_TOOLS` to a JSON array or a comma-separated list of tool names.
+  - Only the tools listed will be available to clients; all others will be hidden.
+  - If `MCP_TOOLS` is not set, all tools are enabled by default.
+
+  - **Examples:**
+
+      ```json
+          {
+        "servers": {
+          "testrail": {
+            "command": "node",
+            "args": ["C:\\path\\to\\your\\testrail-mcp\\wrapper.cjs"],
+            "env": {
+              "TESTRAIL_URL": "https://your-testrail-instance.testrail.io",
+              "TESTRAIL_USERNAME": "your-email@company.com",
+              "TESTRAIL_PASSWORD": "your-api-key-or-password",
+              "MCP_TOOLS": ["get_projects","get_cases","add_case"]
+            }
+          }
+        }
+      }
+      ```
 
 ## 📁 Project Structure
 
