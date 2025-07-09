@@ -1,13 +1,9 @@
-import { z } from 'zod';
-
-const TestRailCredentialsSchema = z.object({
-  url: z.string().url(),
-  username: z.string(),
-  password: z.string(),
-  apiKey: z.string().optional(),
-});
-
-export type TestRailCredentials = z.infer<typeof TestRailCredentialsSchema>;
+export interface TestRailCredentials {
+  url: string;
+  username: string;
+  password: string;
+  apiKey?: string;
+}
 
 export function parseCredentials(): TestRailCredentials {
   // Read credentials from environment variables
@@ -20,5 +16,12 @@ export function parseCredentials(): TestRailCredentials {
     throw new Error('Missing required TestRail environment variables: TESTRAIL_URL, TESTRAIL_USERNAME, TESTRAIL_PASSWORD');
   }
 
-  return TestRailCredentialsSchema.parse({ url, username, password, apiKey });
+  // Simple URL validation
+  try {
+    new URL(url);
+  } catch {
+    throw new Error('TESTRAIL_URL must be a valid URL');
+  }
+
+  return { url, username, password, apiKey };
 }
