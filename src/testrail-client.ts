@@ -1,5 +1,107 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import type { TestRailCredentials } from './config.js';
+import { parseCredentials, TestRailCredentials } from './config.js';
+
+// Available TestRail case fields for filtering (standard fields only)
+const STANDARD_CASE_FIELDS = [
+  // Core identifiers and metadata
+  'id', 'title', 'section_id', 'template_id', 'type_id', 'priority_id', 
+  'milestone_id', 'refs', 'suite_id', 'display_order', 'is_deleted',
+  
+  // Timestamps and users
+  'created_by', 'created_on', 'updated_by', 'updated_on',
+  
+  // Estimates and assignments
+  'estimate', 'estimate_forecast', 'case_assignedto_id',
+  
+  // Standard collections
+  'comments', 'labels'
+];
+
+// Note: Custom fields (custom_*) are project-specific and should be added dynamically
+// based on the actual project's custom field configuration
+const AVAILABLE_CASE_FIELDS = STANDARD_CASE_FIELDS;
+
+/**
+ * Filter response data to include only specified fields
+ */
+function filterFields(data: any[], fields?: string): any[] {
+  if (!fields) {
+    return data; // Return all fields if none specified
+  }
+  
+  const requestedFields = fields.split(',').map(field => field.trim());
+  
+  return data.map(item => {
+    const filteredItem: any = {};
+    
+    requestedFields.forEach(field => {
+      if (item.hasOwnProperty(field)) {
+        filteredItem[field] = item[field];
+      }
+    });
+    
+    return filteredItem;
+  });
+}
+
+/**
+ * Validate requested fields and return validation results
+ */
+function validateFields(fields: string): { valid: string[], invalid: string[] } {
+  const requestedFields = fields.split(',').map(field => field.trim());
+  const valid = requestedFields.filter(field => AVAILABLE_CASE_FIELDS.includes(field));
+  const invalid = requestedFields.filter(field => !AVAILABLE_CASE_FIELDS.includes(field));
+  
+  return { valid, invalid };
+}
+
+/**
+ * Get available fields for a specific project (includes custom fields)
+ */
+async function getAvailableFieldsForProject(client: TestRailClient, projectId: number): Promise<string[]> {
+  try {
+    const caseFields = await client.getCaseFields();
+    
+    // Try multiple property names for custom field detection
+    const customFields = caseFields
+      .filter((field: any) => {
+        const fieldName = field.system_name || field.name || '';
+        return fieldName.startsWith('custom_');
+      })
+      .map((field: any) => field.system_name || field.name);
+    
+    // For debugging: also check if requested fields exist in actual test case data
+    const commonCustomFields = [
+      'custom_preconds', 'custom_steps', 'custom_expected', 'custom_tag',
+      'custom_steps_separated', 'custom_mission', 'custom_goals'
+    ];
+    
+    const allAvailableFields = [...STANDARD_CASE_FIELDS, ...customFields, ...commonCustomFields];
+    
+    return allAvailableFields;
+  } catch (error) {
+    console.warn('Could not fetch custom fields, using standard fields only:', error);
+    // Include common custom fields even if API call fails
+    return [...STANDARD_CASE_FIELDS, 'custom_preconds', 'custom_steps', 'custom_expected', 'custom_tag'];
+  }
+}
+
+/**
+ * Validate requested fields against available fields for a project
+ */
+async function validateFieldsForProject(
+  client: TestRailClient, 
+  projectId: number, 
+  fields: string
+): Promise<{ valid: string[], invalid: string[] }> {
+  const requestedFields = fields.split(',').map(field => field.trim());
+  const availableFields = await getAvailableFieldsForProject(client, projectId);
+  
+  const valid = requestedFields.filter(field => availableFields.includes(field));
+  const invalid = requestedFields.filter(field => !availableFields.includes(field));
+  
+  return { valid, invalid };
+}
 
 export class TestRailClient {
   private client: AxiosInstance;
@@ -100,6 +202,7 @@ export class TestRailClient {
   async getCases(projectId: number, options?: { 
     suite_id?: number; 
     section_id?: number; 
+    fields?: string;
     created_after?: number;
     created_before?: number;
     created_by?: number[];
@@ -141,7 +244,34 @@ export class TestRailClient {
       endpoint += `&${params.toString()}`;
     }
 
-    return this.request('GET', endpoint);
+    const response = await this.request('GET', endpoint) as any;
+
+    // Apply field filtering if requested
+    if (options?.fields && response.cases) {
+      const fieldValidation = await validateFieldsForProject(this, projectId, options.fields);
+      
+      if (fieldValidation.invalid.length > 0) {
+        console.warn(`Warning: Invalid fields requested for project ${projectId}: ${fieldValidation.invalid.join(', ')}`);
+      }
+      
+      const filteredCases = filterFields(response.cases, fieldValidation.valid.join(','));
+      
+      return {
+        ...response,
+        cases: filteredCases,
+        _metadata: {
+          total_cases: response.cases.length,
+          returned_fields: fieldValidation.valid,
+          invalid_fields: fieldValidation.invalid,
+          project_id: projectId,
+          original_size_bytes: JSON.stringify(response.cases).length,
+          filtered_size_bytes: JSON.stringify(filteredCases).length,
+          size_reduction_percent: Math.round((1 - JSON.stringify(filteredCases).length / JSON.stringify(response.cases).length) * 100)
+        }
+      };
+    }
+
+    return response;
   }
 
   async getCase(caseId: number): Promise<any> {
@@ -522,6 +652,33 @@ export class TestRailClient {
 
   async addCaseField(fieldData: any): Promise<any> {
     return this.request('POST', 'add_case_field', fieldData);
+  }
+
+  async getAvailableFieldsForProject(projectId: number): Promise<{ standard_fields: string[], custom_fields: string[], all_fields: string[] }> {
+    try {
+      const caseFields = await this.getCaseFields();
+      const customFields = caseFields
+        .filter((field: any) => {
+          const fieldName = field.system_name || field.name || '';
+          return fieldName.startsWith('custom_');
+        })
+        .map((field: any) => field.system_name || field.name);
+      
+      const allFields = [...STANDARD_CASE_FIELDS, ...customFields];
+      
+      return {
+        standard_fields: STANDARD_CASE_FIELDS,
+        custom_fields: customFields,
+        all_fields: allFields
+      };
+    } catch (error) {
+      console.warn('Could not fetch custom fields for project', projectId, ':', error);
+      return {
+        standard_fields: STANDARD_CASE_FIELDS,
+        custom_fields: [],
+        all_fields: STANDARD_CASE_FIELDS
+      };
+    }
   }
 
   async getCaseTypes(): Promise<any> {

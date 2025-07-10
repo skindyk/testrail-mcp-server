@@ -120,6 +120,8 @@ class TestRailMCPServer {
         // Test Cases
       case "get_cases":
         return this.testRailClient.getCases(args.project_id, args);
+      case "get_available_case_fields":
+        return this.testRailClient.getAvailableFieldsForProject(args.project_id);
       case "get_case":
         return this.testRailClient.getCase(args.case_id);
       case "get_history_for_case":
@@ -402,6 +404,6 @@ class TestRailMCPServer {
 
 const server = new TestRailMCPServer();
 server.run().catch((error) => {
-  console.error("Failed to start TestRail MCP server:", error);
+  console.info("Failed to start TestRail MCP server:", error);
   process.exit(1);
 });

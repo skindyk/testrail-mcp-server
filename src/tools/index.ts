@@ -207,7 +207,7 @@ export const tools: Tool[] = [
   // Test Cases
   {
     name: "get_cases",
-    description: "Retrieve test cases from a TestRail project with advanced filtering options. Test cases are the individual test scenarios that define what needs to be tested. Use this to find specific test cases, analyze test coverage, or prepare test execution plans.",
+    description: "Retrieve test cases from a TestRail project with advanced filtering options. Supports custom field selection to reduce response size for large datasets. When fetching many test cases (100+), specify only required fields using the 'fields' parameter to prevent context overflow. Test cases are the individual test scenarios that define what needs to be tested.",
     inputSchema: {
       type: "object",
       properties: {
@@ -222,6 +222,10 @@ export const tools: Tool[] = [
         section_id: {
           type: "integer",
           description: "Filter by specific section ID to get test cases from a particular section or folder. Use get_sections to find available section IDs."
+        },
+        fields: {
+          type: "string",
+          description: "Comma-separated list of specific fields to return (e.g., 'id,title,refs,estimate'). If not provided, returns all fields. This significantly reduces response size for large datasets. Standard fields available: id, title, section_id, template_id, type_id, priority_id, milestone_id, refs, created_by, created_on, updated_by, updated_on, estimate, estimate_forecast, suite_id, display_order, is_deleted, case_assignedto_id, comments, labels. Custom fields (custom_*) are automatically detected per project and validated dynamically."
         },
         created_after: {
           type: "integer",
@@ -1464,7 +1468,7 @@ export const tools: Tool[] = [
         },
         include_all: {
           type: "boolean",
-          description: "Set to true to include all test cases from the suite, false to specify custom case selection via case_ids. Use false for focused testing."
+          description: "Set to true to include all test cases from the suite, false to specify custom case selection via case_ids. Use false for focused testing of specific features."
         },
         case_ids: {
           type: "array",
@@ -2065,7 +2069,7 @@ export const tools: Tool[] = [
           items: {
             type: "integer"
           },
-          description: "Array of template IDs where this field should be available (required if include_all is false). Use get_templates to find available template IDs for your project."
+          description: "Array of template IDs where this field should be available (required if include_all is false). Use get_templates to find available templates for your project."
         },
         configs: {
           type: "array",

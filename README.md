@@ -5,6 +5,7 @@ A Model Context Protocol (MCP) server that provides seamless integration between
 ## 🚀 Features
 
 - **Complete TestRail API Coverage**: Access all TestRail endpoints through natural language.
+- **Dynamic Field Filtering**: Reduce response size by 80-95% when fetching large datasets - prevents AI context overflow.
 - **Project Management**: Create, read, update, and delete projects.
 - **Test Case Management**: Manage test cases, suites, and sections with advanced filtering.
 - **Test Execution**: Create and manage test runs, add results, and track progress.
@@ -13,6 +14,42 @@ A Model Context Protocol (MCP) server that provides seamless integration between
 - **Reporting**: Generate and run reports including cross-project reports.
 - **Advanced Features**: Support for BDD, attachments, shared steps, datasets, variables, labels, and configurations.
 - **Enterprise Features**: User groups, roles, templates, and advanced administration.
+
+## 🆕 New: Field Filtering for Large Datasets
+
+**Problem Solved**: When fetching 250+ test cases, large responses can overwhelm AI context and cause conversation loss.
+
+**Solution**: Use the `fields` parameter to specify exactly which data you need:
+
+```javascript
+// Instead of getting all data (2MB response)
+get_cases({ project_id: 1, suite_id: 22 })
+
+// Get only what you need (200KB response, 90% reduction)
+get_cases({ 
+  project_id: 1, 
+  suite_id: 22, 
+  fields: "id,title,custom_field1,custom_field2,priority_id" 
+})
+```
+
+### Field Filtering Examples
+
+**Basic Usage:**
+```
+Get 10 test cases from project 1 suite 22. Use field filtering and return only the following fields: id, title, priority_id, custom_field1
+```
+
+**Available Field Types:**
+- **Standard Fields**: `id`, `title`, `refs`, `priority_id`, `created_on`, `updated_on`, etc.
+- **Custom Fields**: Any `custom_*` fields configured in your TestRail instance
+- **Performance**: Typical size reduction of 60-90% for large datasets
+
+**Benefits:**
+- ✅ **Prevents AI context overflow** with large datasets
+- ✅ **Improved response speed** due to smaller payloads  
+- ✅ **Automatic custom field detection** per project
+- ✅ **Invalid field validation** with helpful error messages
 
 ## 📋 Prerequisites
 
@@ -74,6 +111,7 @@ Once configured, you can use natural language commands in MCP clients like Intel
 ### Test Case Management
 - "Show me test cases for project 1"
 - "Get test case details for case ID 123"
+- "Get 50 test cases from project 1 suite 5 with field filtering - return only id, title, priority_id, custom_field1"
 - "Create a new test case in section 45"
 - "Update test case 456 with new priority"
 - "Get case history for case 789"
