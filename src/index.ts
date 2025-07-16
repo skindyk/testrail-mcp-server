@@ -398,12 +398,12 @@ class TestRailMCPServer {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error("TestRail MCP server running on stdio");
+    console.info("TestRail MCP server running on stdio");
   }
 }
 
 const server = new TestRailMCPServer();
 server.run().catch((error) => {
-  console.info("Failed to start TestRail MCP server:", error);
+  console.error("Failed to start TestRail MCP server:", error);
   process.exit(1);
 });
