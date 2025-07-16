@@ -398,7 +398,7 @@ class TestRailMCPServer {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.info("TestRail MCP server running on stdio");
+    console.error("TestRail MCP server running on stdio");
   }
 }
 
