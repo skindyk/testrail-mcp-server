@@ -19,7 +19,11 @@ A Model Context Protocol (MCP) server that provides seamless integration between
 ## 🛠️ Installation
 
 1.  **Clone the project**:
-
+    ```bash
+    git clone https://github.com/skindyk/testrail-mcp-server.git
+    cd testrail-mcp-server
+    ```
+    
 2.  **Install dependencies**:
     ```bash
     npm install
@@ -38,25 +42,42 @@ A Model Context Protocol (MCP) server that provides seamless integration between
 
 ## ⚙️ Configuration
 
-1.  **MCP Client Configuration**
-    Configure the MCP server in your MCP client settings:
-
-    ```json
-    {
-      "servers": {
-        "testrail": {
-          "command": "node",
-          "args": ["C:\\path\\to\\your\\testrail-mcp\\wrapper.cjs"],
-          "env": {
-            "TESTRAIL_URL": "https://your-testrail-instance.testrail.io",
-            "TESTRAIL_USERNAME": "your-email@company.com",
-            "TESTRAIL_PASSWORD": "your-api-key-or-password"
-          }
-        }
+**MCP Client Configuration**
+**Windows:**
+```json
+{
+  "servers": {
+    "testrail": {
+      "command": "node",
+      "args": ["C:\\path\\to\\your\\testrail-mcp-server\\wrapper.cjs"],
+      "env": {
+        "TESTRAIL_URL": "https://your-testrail-instance.testrail.io",
+        "TESTRAIL_USERNAME": "your-email@company.com",
+        "TESTRAIL_PASSWORD": "your-api-key-or-password"
       }
     }
-    ```
-    Set the environment variables above with your actual TestRail credentials and path to wrapper.cjs.
+  }
+}
+```
+
+**macOS/Linux:**
+```json
+{
+  "servers": {
+    "testrail": {
+      "command": "node",
+      "args": ["/path/to/your/testrail-mcp-server/wrapper.cjs"],
+      "env": {
+        "TESTRAIL_URL": "https://your-testrail-instance.testrail.io",
+        "TESTRAIL_USERNAME": "your-email@company.com",
+        "TESTRAIL_PASSWORD": "your-api-key-or-password"
+      }
+    }
+  }
+}
+```
+
+Replace the paths and environment variables with your actual TestRail credentials and absolute path to wrapper.cjs.
 
 ## 📚 Documentation
 
