@@ -9,6 +9,7 @@ A Model Context Protocol (MCP) server that provides seamless integration between
 - **Enterprise Support**: Advanced features including BDD, attachments, shared steps, datasets
 - **Dynamic Field Filtering**: Reduce get_cases response size by 80-95% for large amounts of test cases
 - **Flexible Tool Control**: Limit available tools using environment variables
+- **System and User-Created MCP Prompts**: This MCP Server supports both default server prompts and provides the ability for users to create their own ones
 
 ## 📋 Prerequisites
 
