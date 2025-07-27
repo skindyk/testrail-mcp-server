@@ -1,0 +1,17 @@
+{
+  "name": "sprint-test-summary",
+  "description": "Generate a test execution summary for a specific sprint or milestone",
+  "arguments": [
+    {
+      "name": "project_name",
+      "description": "The TestRail project name",
+      "required": true
+    },
+    {
+      "name": "milestone_name",
+      "description": "The milestone or sprint name",
+      "required": true
+    }
+  ],
+  "template": "# Sprint Test Summary: {{milestone_name}}\n\nGenerate a comprehensive test execution summary for milestone '{{milestone_name}}' in project '{{project_name}}'.\n\n## Required Analysis:\n\n### 1. Milestone Identification\n- Use get_projects to find the project ID for '{{project_name}}'\n- Use get_milestones with the project_id to locate milestone '{{milestone_name}}'\n- Verify milestone details and associated test runs\n\n### 2. Test Execution Data Collection\n- Use get_runs with project_id and milestone_id to get all test runs for this milestone\n- For each test run, use get_results_for_run to collect detailed test results\n- Use get_tests to get test case details and current status\n\n### 3. Statistical Analysis\nCalculate and analyze:\n- Total tests planned vs executed\n- Pass/fail/blocked/retest/untested statistics\n- Execution progress over time\n- Test coverage by functional area (if suites are organized by feature)\n- Defect discovery rate and trends\n\n### 4. Key Insights\nIdentify:\n- Critical blockers and their impact\n- Areas with high failure rates\n- Tests that consistently fail or are unstable\n- Coverage gaps or untested areas\n- Performance trends (execution time, throughput)\n\n## Expected Deliverables\n\n```\n# Sprint Test Summary: {{milestone_name}}\n## Project: {{project_name}}\n\n### Executive Summary\n- Sprint Status: [In Progress/Completed]\n- Overall Test Progress: [X% Complete]\n- Pass Rate: [X%]\n- Critical Issues: [Count]\n\n### Test Execution Statistics\n- Total Test Cases: [Count]\n- Executed: [Count] ([X%])\n- Passed: [Count] ([X%])\n- Failed: [Count] ([X%])\n- Blocked: [Count] ([X%])\n- Retest: [Count] ([X%])\n- Untested: [Count] ([X%])\n\n### Key Findings\n[List critical issues, blockers, and trends]\n\n### Recommendations\n[Actionable recommendations for the team]\n\n### Next Sprint Considerations\n[Items to carry forward or address]\n```\n\n**Start by identifying the project and milestone, then collect comprehensive test execution data.**"
+}

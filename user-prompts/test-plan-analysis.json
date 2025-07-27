@@ -1,0 +1,22 @@
+{
+  "name": "test-plan-analysis",
+  "description": "Analyze test plan effectiveness and provide optimization recommendations",
+  "arguments": [
+    {
+      "name": "project_name",
+      "description": "The TestRail project name",
+      "required": true
+    },
+    {
+      "name": "plan_name",
+      "description": "Specific test plan name to analyze (optional - if not provided, analyzes all recent plans)",
+      "required": false
+    },
+    {
+      "name": "time_period",
+      "description": "Time period to analyze (e.g., 'last 30 days', 'current quarter')",
+      "required": false
+    }
+  ],
+  "template": "# Test Plan Analysis for {{project_name}}\n\nAnalyze test plans in project '{{project_name}}'.\nSpecific plan: {{plan_name}} (if provided, otherwise analyze all recent plans)\nTime period: {{time_period}} (if specified)\n\n## Analysis Objectives\n\n1. **Test Plan Effectiveness**: Evaluate how well test plans achieve their testing objectives\n2. **Resource Utilization**: Analyze test execution efficiency and resource allocation\n3. **Quality Metrics**: Assess defect detection rates and test coverage\n4. **Process Optimization**: Identify opportunities for improvement\n\n## Investigation Steps\n\n### 1. Project and Plan Discovery\n- Use get_projects to find the project ID for '{{project_name}}'\n- Use get_plans to get test plans (filter by plan name '{{plan_name}}' if provided)\n- Use get_plan for detailed information about each plan\n\n### 2. Test Plan Structure Analysis\nFor each test plan:\n- Analyze plan entries and associated test runs\n- Review test case distribution across runs\n- Examine configuration coverage (if applicable)\n- Assess milestone alignment and timeline adherence\n\n### 3. Execution Metrics Collection\n- Use get_results_for_run for each run in the plans\n- Calculate execution rates, pass/fail ratios\n- Identify execution bottlenecks and delays\n- Track defect discovery patterns\n\n### 4. Comparative Analysis\n- Compare plan performance against historical data\n- Benchmark against project averages\n- Identify high-performing vs problematic plans\n- Analyze correlation between plan structure and outcomes\n\n### 5. Resource and Timeline Analysis\n- Evaluate planned vs actual execution timelines\n- Assess resource allocation effectiveness\n- Identify over/under-utilized test configurations\n- Review milestone achievement rates\n\n## Key Metrics to Calculate\n\n- **Plan Completion Rate**: Percentage of planned tests executed\n- **Defect Detection Efficiency**: Defects found per test executed\n- **Execution Velocity**: Tests executed per day/week\n- **Rework Rate**: Percentage of tests requiring re-execution\n- **Coverage Effectiveness**: Critical areas tested vs missed\n- **Timeline Adherence**: Planned vs actual execution duration\n\n## Expected Deliverables\n\n```\n# Test Plan Analysis Report: {{project_name}}\n\n## Executive Summary\n- Plans Analyzed: [Count]\n- Overall Effectiveness Score: [Rating]\n- Key Optimization Opportunities: [Summary]\n\n## Plan Performance Overview\n[Table showing key metrics for each plan]\n\n## Detailed Findings\n### Strengths\n[What's working well]\n\n### Areas for Improvement\n[Specific issues identified]\n\n### Resource Utilization\n[Efficiency analysis]\n\n## Optimization Recommendations\n1. **Immediate Actions** (0-2 weeks)\n   [Quick wins and urgent fixes]\n\n2. **Short-term Improvements** (1-3 months)\n   [Process enhancements]\n\n3. **Long-term Strategic Changes** (3+ months)\n   [Structural improvements]\n\n## Implementation Roadmap\n[Prioritized action plan with timelines]\n```\n\n**Begin by identifying and analyzing the test plans, then dive deep into execution metrics and patterns.**"
+}

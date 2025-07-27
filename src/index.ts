@@ -5,11 +5,15 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
   Tool,
+  Prompt,
 } from "@modelcontextprotocol/sdk/types.js";
 import { TestRailClient } from "./testrail-client.js";
 import { parseCredentials } from "./config.js";
 import { tools as allTools } from "./tools/index.js";
+import { PromptLoader } from "./prompts/prompt-loader.js";
 
 function getAllowedTools(): string[] | null {
   const allowed = process.env.MCP_TOOLS;
@@ -25,18 +29,25 @@ class TestRailMCPServer {
   private server: Server;
   private testRailClient: TestRailClient | null = null;
   private tools: Tool[];
+  private promptLoader: PromptLoader;
 
   constructor() {
     const allowedTools = getAllowedTools();
     this.tools = allowedTools
-        ? allTools.filter(t => allowedTools.includes(t.name))
-        : allTools;
+      ? allTools.filter(t => allowedTools.includes(t.name))
+      : allTools;
+
+    // Initialize prompt loader (loads both default and user prompts)
+    this.promptLoader = new PromptLoader();
+    this.promptLoader.initializeUserPrompts(); // Ensure user prompts directory exists
+
     this.server = new Server({
       name: "testrail-mcp-server",
       version: "1.0.0",
     });
 
     this.setupToolHandlers();
+    this.setupPromptHandlers();
   }
 
   private setupToolHandlers() {
@@ -86,6 +97,52 @@ class TestRailMCPServer {
     });
   }
 
+  private setupPromptHandlers() {
+    this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
+      return {
+        prompts: this.promptLoader.getAllPrompts(),
+      };
+    });
+
+    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+      const { name, arguments: args } = request.params;
+
+      const prompt = this.promptLoader.findPrompt(name);
+      if (!prompt) {
+        throw new Error(`Unknown prompt: ${name}`);
+      }
+
+      try {
+        // Initialize TestRail client if not already done
+        if (!this.testRailClient) {
+          const credentials = parseCredentials();
+          this.testRailClient = new TestRailClient(credentials);
+        }
+
+        // Use the prompt loader to generate content (handles both default and user prompts)
+        const promptContent = await this.promptLoader.generatePromptContent(
+          name,
+          args || {},
+          this.generateDefaultPromptContent.bind(this)
+        );
+
+        return {
+          messages: [
+            {
+              role: "user",
+              content: {
+                type: "text",
+                text: promptContent,
+              },
+            },
+          ],
+        };
+      } catch (error) {
+        throw new Error(`Error generating prompt: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    });
+  }
+
   private async executeToolMethod(toolName: string, args: any): Promise<any> {
     if (!this.testRailClient) {
       throw new Error("TestRail client not initialized");
@@ -93,7 +150,7 @@ class TestRailMCPServer {
 
     // Route to appropriate method based on tool name
     switch (toolName) {
-        // Projects
+      // Projects
       case "get_projects":
         return this.testRailClient.getProjects(args.is_completed, args.limit, args.offset);
       case "get_project":
@@ -105,7 +162,7 @@ class TestRailMCPServer {
       case "delete_project":
         return this.testRailClient.deleteProject(args.project_id);
 
-        // Test Suites
+      // Test Suites
       case "get_suites":
         return this.testRailClient.getSuites(args.project_id);
       case "get_suite":
@@ -117,7 +174,7 @@ class TestRailMCPServer {
       case "delete_suite":
         return this.testRailClient.deleteSuite(args.suite_id, args.soft);
 
-        // Test Cases
+      // Test Cases
       case "get_cases":
         return this.testRailClient.getCases(args.project_id, args);
       case "get_available_case_fields":
@@ -141,7 +198,7 @@ class TestRailMCPServer {
       case "delete_cases":
         return this.testRailClient.deleteCases(args.project_id, args.case_ids, args.suite_id, args.soft);
 
-        // Test Runs
+      // Test Runs
       case "get_runs":
         return this.testRailClient.getRuns(args.project_id, args);
       case "get_run":
@@ -155,7 +212,7 @@ class TestRailMCPServer {
       case "delete_run":
         return this.testRailClient.deleteRun(args.run_id, args.soft);
 
-        // Test Results
+      // Test Results
       case "get_results":
         return this.testRailClient.getResults(args.test_id, args);
       case "get_results_for_case":
@@ -171,7 +228,7 @@ class TestRailMCPServer {
       case "add_results_for_cases":
         return this.testRailClient.addResultsForCases(args.run_id, args);
 
-        // Test Plans
+      // Test Plans
       case "get_plans":
         return this.testRailClient.getPlans(args.project_id, args);
       case "get_plan":
@@ -197,7 +254,7 @@ class TestRailMCPServer {
       case "delete_run_from_plan_entry":
         return this.testRailClient.deleteRunFromPlanEntry(args.run_id);
 
-        // Sections
+      // Sections
       case "get_sections":
         return this.testRailClient.getSections(args.project_id, args);
       case "get_section":
@@ -211,7 +268,7 @@ class TestRailMCPServer {
       case "delete_section":
         return this.testRailClient.deleteSection(args.section_id, args.soft);
 
-        // Milestones
+      // Milestones
       case "get_milestones":
         return this.testRailClient.getMilestones(args.project_id, args);
       case "get_milestone":
@@ -223,7 +280,7 @@ class TestRailMCPServer {
       case "delete_milestone":
         return this.testRailClient.deleteMilestone(args.milestone_id);
 
-        // Users
+      // Users
       case "get_user":
         return this.testRailClient.getUser(args.user_id);
       case "get_user_by_email":
@@ -231,7 +288,7 @@ class TestRailMCPServer {
       case "get_users":
         return this.testRailClient.getUsers(args.project_id);
 
-        // Custom fields and configurations
+      // Custom fields and configurations
       case "get_case_fields":
         return this.testRailClient.getCaseFields();
       case "add_case_field":
@@ -249,7 +306,7 @@ class TestRailMCPServer {
       case "get_templates":
         return this.testRailClient.getTemplates(args.project_id);
 
-        // Reports
+      // Reports
       case "get_reports":
         return this.testRailClient.getReports(args.project_id);
       case "run_report":
@@ -259,7 +316,7 @@ class TestRailMCPServer {
       case "run_cross_project_report":
         return this.testRailClient.runCrossProjectReport(args.report_template_id);
 
-        // Attachments
+      // Attachments
       case "add_attachment_to_case":
         return this.testRailClient.addAttachmentToCase(args.case_id, args.attachment);
       case "add_attachment_to_plan":
@@ -285,13 +342,13 @@ class TestRailMCPServer {
       case "delete_attachment":
         return this.testRailClient.deleteAttachment(args.attachment_id);
 
-        // BDD (Behavior Driven Development)
+      // BDD (Behavior Driven Development)
       case "get_bdd":
         return this.testRailClient.getBdd(args.case_id);
       case "add_bdd":
         return this.testRailClient.addBdd(args.project_id, args.file_content);
 
-        // Configurations
+      // Configurations
       case "get_configs":
         return this.testRailClient.getConfigs(args.project_id);
       case "add_config_group":
@@ -307,7 +364,7 @@ class TestRailMCPServer {
       case "delete_config":
         return this.testRailClient.deleteConfig(args.config_id);
 
-        // Tests
+      // Tests
       case "get_test":
         return this.testRailClient.getTest(args.test_id, args.with_data);
       case "get_tests":
@@ -322,7 +379,7 @@ class TestRailMCPServer {
       case "update_tests":
         return this.testRailClient.updateTests(args.test_ids, args.labels);
 
-        // Labels
+      // Labels
       case "get_label":
         return this.testRailClient.getLabel(args.label_id);
       case "get_labels":
@@ -333,7 +390,7 @@ class TestRailMCPServer {
       case "update_label":
         return this.testRailClient.updateLabel(args.label_id, args.title);
 
-        // Shared Steps
+      // Shared Steps
       case "get_shared_step":
         return this.testRailClient.getSharedStep(args.shared_step_id);
       case "get_shared_step_history":
@@ -356,7 +413,7 @@ class TestRailMCPServer {
       case "delete_shared_step":
         return this.testRailClient.deleteSharedStep(args.shared_step_id, args.keep_in_cases);
 
-        // Datasets
+      // Datasets
       case "get_dataset":
         return this.testRailClient.getDataset(args.dataset_id);
       case "get_datasets":
@@ -368,7 +425,7 @@ class TestRailMCPServer {
       case "delete_dataset":
         return this.testRailClient.deleteDataset(args.dataset_id);
 
-        // Variables
+      // Variables
       case "get_variables":
         return this.testRailClient.getVariables(args.project_id);
       case "add_variable":
@@ -378,7 +435,7 @@ class TestRailMCPServer {
       case "delete_variable":
         return this.testRailClient.deleteVariable(args.variable_id);
 
-        // Groups
+      // Groups
       case "get_group":
         return this.testRailClient.getGroup(args.group_id);
       case "get_groups":
@@ -395,10 +452,47 @@ class TestRailMCPServer {
     }
   }
 
+  private async generateDefaultPromptContent(promptName: string, args: any): Promise<string> {
+    switch (promptName) {
+      case "testrail-welcome":
+        return this.generateWelcomePrompt(args);
+      default:
+        throw new Error(`Unknown prompt: ${promptName}`);
+    }
+  }
+
+  private async generateWelcomePrompt(args: any): Promise<string> {
+    return `# Welcome to TestRail MCP Server! 🚀
+
+The TestRail MCP Server gives you tools to interact with TestRail API. Here are some simple commands to get you started:
+
+## 🎯 Try These Basic Commands:
+
+### 1. See Your Projects
+\`\`\`
+Show me all TestRail projects
+\`\`\`
+
+### 2. Explore a Project (replace "My Project" with your project name)
+\`\`\`
+What test cases are in My Project?
+Show me test runs from My Project
+\`\`\`
+
+### 3. Check Test Results
+\`\`\`
+Get the latest test run results from My Project
+\`\`\`
+
+Start with \`Get TestRail projects\` to see what's available!`;
+  }
+
+
+
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error("TestRail MCP server running on stdio");
+    // Server is now running - no console output needed as it interferes with MCP protocol
   }
 }
 

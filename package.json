@@ -10,7 +10,9 @@
     "dev": "tsx src/index.ts",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
-    "format": "prettier --write src/**/*.ts"
+    "format": "prettier --write src/**/*.ts",
+    "create-prompt": "node scripts/create-user-prompt.js",
+    "prompt-examples": "node scripts/create-user-prompt.js --examples"
   },
   "keywords": ["mcp", "testrail", "testing", "api"],
   "author": "TestRail MCP Server",

@@ -1,0 +1,17 @@
+{
+  "name": "test-case-review",
+  "description": "Generate a comprehensive review of test cases in a project, identifying gaps and improvements",
+  "arguments": [
+    {
+      "name": "project_name",
+      "description": "The TestRail project to review",
+      "required": true
+    },
+    {
+      "name": "focus_area",
+      "description": "Specific area to focus on (e.g., 'automation gaps', 'outdated cases', 'missing coverage')",
+      "required": false
+    }
+  ],
+  "template": "# Test Case Review for {{project_name}}\n\nPerform a comprehensive review of test cases in the TestRail project '{{project_name}}'.\n\n## Analysis Focus\nFocus area: {{focus_area}}\n(If no focus area provided, perform a general comprehensive review)\n\n## Steps to Follow:\n\n### 1. Project Discovery\n- Use get_projects to find the project ID for '{{project_name}}'\n- Use get_project to understand the project structure (single vs multi-suite)\n- Use get_suites if it's a multi-suite project\n\n### 2. Field Discovery\n- Use get_case_fields to understand available custom fields\n- Identify automation, priority, and other relevant fields\n\n### 3. Test Case Analysis\n- Retrieve all test cases using get_cases with appropriate pagination\n- Analyze test case distribution across suites/sections\n- Review test case completeness (steps, expected results)\n- Identify automation status and gaps\n\n### 4. Quality Assessment\n- Check for duplicate or similar test cases\n- Identify outdated test cases (old creation dates, no recent updates)\n- Review test case organization and structure\n- Assess test coverage gaps\n\n### 5. Generate Recommendations\nProvide specific, actionable recommendations for:\n- Test case consolidation opportunities\n- Automation candidates\n- Coverage improvements\n- Organizational improvements\n- Maintenance priorities\n\n## Expected Deliverables\n\n```\n# Test Case Review Report: {{project_name}}\n\n## Executive Summary\n- Total test cases: [count]\n- Test suites: [count]\n- Automation coverage: [percentage]\n- Key findings: [summary]\n\n## Detailed Analysis\n[Provide detailed findings with specific examples]\n\n## Recommendations\n[Prioritized list of actionable recommendations]\n\n## Next Steps\n[Suggested implementation plan]\n```\n\n**Start the analysis now by finding the project and gathering test case data.**"
+}
