@@ -619,6 +619,39 @@ export const tools: Tool[] = [
             ]
           },
           description: "Array of label IDs (integers) or label titles (strings) to apply to all test cases. Use get_labels to find available labels."
+        },
+        custom_preconds: {
+          type: "string",
+          description: "Preconditions to apply to all test cases. Describe the required system state, data setup, or environmental conditions needed for successful test execution."
+        },
+        custom_steps: {
+          type: "string",
+          description: "Detailed test steps in a single text field to apply to all test cases. Use clear, numbered steps that describe exactly what actions to perform during test execution."
+        },
+        custom_expected: {
+          type: "string",
+          description: "Expected results or outcomes to apply to all test cases. Describe what should happen when the test steps are executed correctly, including specific system behaviors or outputs."
+        },
+        custom_steps_separated: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              content: {
+                type: "string",
+                description: "Individual test step content describing a specific action to perform."
+              },
+              expected: {
+                type: "string",
+                description: "Expected result for this specific step, describing what should happen after performing the action."
+              },
+              shared_step_id: {
+                type: "integer",
+                description: "ID of a shared step to reuse common test procedures. Use get_shared_steps to find available shared steps."
+              }
+            }
+          },
+          description: "Structured test steps with individual content and expected results to apply to all test cases. Use this format for complex test cases with multiple verification points."
         }
       },
       required: ["case_ids"]
