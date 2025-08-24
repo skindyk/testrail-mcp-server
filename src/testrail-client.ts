@@ -1,25 +1,183 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { parseCredentials, TestRailCredentials } from './config.js';
+import { TestRailCredentials } from './config.js';
+import * as fs from 'fs';
+import * as path from 'path';
+
+/**
+ * Interface for attachment data
+ */
+interface AttachmentData {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
+/**
+ * Process attachment input - handles file paths, base64, or raw content
+ */
+function processAttachment(attachment: any): AttachmentData {
+  if (typeof attachment === 'string') {
+    // Check if it's a file path
+    if (fs.existsSync(attachment)) {
+      const content = fs.readFileSync(attachment);
+      const filename = path.basename(attachment);
+      const ext = path.extname(attachment).toLowerCase();
+
+      // Comprehensive MIME type detection
+      const mimeTypes: { [key: string]: string } = {
+        // Images
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.bmp': 'image/bmp',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml',
+        '.ico': 'image/x-icon',
+        '.tiff': 'image/tiff',
+        '.tif': 'image/tiff',
+
+        // Documents
+        '.pdf': 'application/pdf',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.xls': 'application/vnd.ms-excel',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.ppt': 'application/vnd.ms-powerpoint',
+        '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        '.odt': 'application/vnd.oasis.opendocument.text',
+        '.ods': 'application/vnd.oasis.opendocument.spreadsheet',
+        '.odp': 'application/vnd.oasis.opendocument.presentation',
+
+        // Text files
+        '.txt': 'text/plain',
+        '.log': 'text/plain',
+        '.csv': 'text/csv',
+        '.rtf': 'application/rtf',
+        '.md': 'text/markdown',
+        '.markdown': 'text/markdown',
+
+        // Code files
+        '.html': 'text/html',
+        '.htm': 'text/html',
+        '.css': 'text/css',
+        '.js': 'application/javascript',
+        '.ts': 'application/typescript',
+        '.json': 'application/json',
+        '.xml': 'application/xml',
+        '.yaml': 'application/x-yaml',
+        '.yml': 'application/x-yaml',
+        '.sql': 'application/sql',
+
+        // Archives
+        '.zip': 'application/zip',
+        '.rar': 'application/vnd.rar',
+        '.7z': 'application/x-7z-compressed',
+        '.tar': 'application/x-tar',
+        '.gz': 'application/gzip',
+        '.bz2': 'application/x-bzip2',
+
+        // Audio/Video
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav',
+        '.mp4': 'video/mp4',
+        '.avi': 'video/x-msvideo',
+        '.mov': 'video/quicktime',
+        '.wmv': 'video/x-ms-wmv',
+
+        // Other common formats
+        '.exe': 'application/vnd.microsoft.portable-executable',
+        '.msi': 'application/x-msi',
+        '.dmg': 'application/x-apple-diskimage',
+        '.iso': 'application/x-iso9660-image'
+      };
+
+      return {
+        filename,
+        content,
+        contentType: mimeTypes[ext] || 'application/octet-stream'
+      };
+    }
+
+    // Check if it's base64 encoded
+    if (attachment.includes('base64,')) {
+      const [header, data] = attachment.split('base64,');
+      const content = Buffer.from(data, 'base64');
+
+      // Extract MIME type from data URL
+      const mimeMatch = header.match(/data:([^;]+)/);
+      const contentType = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+
+      // Generate filename based on content type
+      const extensions: { [key: string]: string } = {
+        'image/png': '.png',
+        'image/jpeg': '.jpg',
+        'image/gif': '.gif',
+        'application/pdf': '.pdf',
+        'text/plain': '.txt'
+      };
+
+      const ext = extensions[contentType] || '.bin';
+      const filename = `attachment_${Date.now()}${ext}`;
+
+      return { filename, content, contentType };
+    }
+
+    // Treat as plain base64
+    try {
+      const content = Buffer.from(attachment, 'base64');
+      return {
+        filename: `attachment_${Date.now()}.bin`,
+        content,
+        contentType: 'application/octet-stream'
+      };
+    } catch (error) {
+      throw new Error('Invalid attachment format. Expected file path, data URL, or base64 string.');
+    }
+  }
+
+  // Handle object with filename and content
+  if (attachment && typeof attachment === 'object') {
+    if (attachment.filename && attachment.content) {
+      let content: Buffer;
+
+      if (Buffer.isBuffer(attachment.content)) {
+        content = attachment.content;
+      } else if (typeof attachment.content === 'string') {
+        content = Buffer.from(attachment.content, 'base64');
+      } else {
+        throw new Error('Attachment content must be Buffer or base64 string');
+      }
+
+      return {
+        filename: attachment.filename,
+        content,
+        contentType: attachment.contentType || 'application/octet-stream'
+      };
+    }
+  }
+
+  throw new Error('Invalid attachment format. Expected file path, data URL, base64 string, or {filename, content} object.');
+}
 
 // Available TestRail case fields for filtering (standard fields only)
 const STANDARD_CASE_FIELDS = [
   // Core identifiers and metadata
-  'id', 'title', 'section_id', 'template_id', 'type_id', 'priority_id', 
+  'id', 'title', 'section_id', 'template_id', 'type_id', 'priority_id',
   'milestone_id', 'refs', 'suite_id', 'display_order', 'is_deleted',
-  
+
   // Timestamps and users
   'created_by', 'created_on', 'updated_by', 'updated_on',
-  
+
   // Estimates and assignments
   'estimate', 'estimate_forecast', 'case_assignedto_id',
-  
+
   // Standard collections
   'comments', 'labels'
 ];
 
 // Note: Custom fields (custom_*) are project-specific and should be added dynamically
 // based on the actual project's custom field configuration
-const AVAILABLE_CASE_FIELDS = STANDARD_CASE_FIELDS;
 
 /**
  * Filter response data to include only specified fields
@@ -28,40 +186,31 @@ function filterFields(data: any[], fields?: string): any[] {
   if (!fields) {
     return data; // Return all fields if none specified
   }
-  
+
   const requestedFields = fields.split(',').map(field => field.trim());
-  
+
   return data.map(item => {
     const filteredItem: any = {};
-    
+
     requestedFields.forEach(field => {
       if (item.hasOwnProperty(field)) {
         filteredItem[field] = item[field];
       }
     });
-    
+
     return filteredItem;
   });
 }
 
-/**
- * Validate requested fields and return validation results
- */
-function validateFields(fields: string): { valid: string[], invalid: string[] } {
-  const requestedFields = fields.split(',').map(field => field.trim());
-  const valid = requestedFields.filter(field => AVAILABLE_CASE_FIELDS.includes(field));
-  const invalid = requestedFields.filter(field => !AVAILABLE_CASE_FIELDS.includes(field));
-  
-  return { valid, invalid };
-}
+
 
 /**
  * Get available fields for a specific project (includes custom fields)
  */
-async function getAvailableFieldsForProject(client: TestRailClient, projectId: number): Promise<string[]> {
+async function getAvailableFieldsForProject(client: TestRailClient, _projectId: number): Promise<string[]> {
   try {
     const caseFields = await client.getCaseFields();
-    
+
     // Try multiple property names for custom field detection
     const customFields = caseFields
       .filter((field: any) => {
@@ -69,16 +218,14 @@ async function getAvailableFieldsForProject(client: TestRailClient, projectId: n
         return fieldName.startsWith('custom_');
       })
       .map((field: any) => field.system_name || field.name);
-    
+
     // For debugging: also check if requested fields exist in actual test case data
     const commonCustomFields = [
       'custom_preconds', 'custom_steps', 'custom_expected', 'custom_tag',
       'custom_steps_separated', 'custom_mission', 'custom_goals'
     ];
-    
-    const allAvailableFields = [...STANDARD_CASE_FIELDS, ...customFields, ...commonCustomFields];
-    
-    return allAvailableFields;
+
+    return [...STANDARD_CASE_FIELDS, ...customFields, ...commonCustomFields];
   } catch (error) {
     console.warn('Could not fetch custom fields, using standard fields only:', error);
     // Include common custom fields even if API call fails
@@ -90,16 +237,16 @@ async function getAvailableFieldsForProject(client: TestRailClient, projectId: n
  * Validate requested fields against available fields for a project
  */
 async function validateFieldsForProject(
-  client: TestRailClient, 
-  projectId: number, 
+  client: TestRailClient,
+  projectId: number,
   fields: string
 ): Promise<{ valid: string[], invalid: string[] }> {
   const requestedFields = fields.split(',').map(field => field.trim());
   const availableFields = await getAvailableFieldsForProject(client, projectId);
-  
+
   const valid = requestedFields.filter(field => availableFields.includes(field));
   const invalid = requestedFields.filter(field => !availableFields.includes(field));
-  
+
   return { valid, invalid };
 }
 
@@ -135,11 +282,52 @@ export class TestRailClient {
     }
   }
 
+  /**
+   * Special request method for file uploads using multipart/form-data
+   */
+  private async requestWithAttachment<T>(method: string, endpoint: string, attachment: any): Promise<T> {
+    try {
+      // Process the attachment
+      const attachmentData = processAttachment(attachment);
+
+      // Create FormData
+      const FormData = (await import('form-data')).default;
+      const formData = new FormData();
+
+      // Add the file to form data
+      formData.append('attachment', attachmentData.content, {
+        filename: attachmentData.filename,
+        contentType: attachmentData.contentType
+      });
+
+      // Make request with multipart/form-data
+      const response: AxiosResponse<T> = await this.client.request({
+        method,
+        url: `index.php?/api/v2/${endpoint}`,
+        data: formData,
+        headers: {
+          ...formData.getHeaders(),
+          // Keep authentication headers from the base client
+          'Authorization': this.client.defaults.headers.common['Authorization']
+        },
+        maxContentLength: 256 * 1024 * 1024, // 256MB limit as per TestRail docs
+        maxBodyLength: 256 * 1024 * 1024
+      });
+
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`TestRail API Error: ${error.response?.status} ${error.response?.statusText} - ${JSON.stringify(error.response?.data)}`);
+      }
+      throw error;
+    }
+  }
+
   // Projects
   async getProjects(isCompleted?: boolean, limit?: number, offset?: number): Promise<any> {
     let endpoint = 'get_projects';
     const params: string[] = [];
-    
+
     if (isCompleted !== undefined) {
       params.push(`is_completed=${isCompleted ? 1 : 0}`);
     }
@@ -149,11 +337,11 @@ export class TestRailClient {
     if (offset !== undefined) {
       params.push(`offset=${offset}`);
     }
-    
+
     if (params.length > 0) {
       endpoint += '&' + params.join('&');
     }
-    
+
     return this.request('GET', endpoint);
   }
 
@@ -199,15 +387,15 @@ export class TestRailClient {
   }
 
   // Test Cases
-  async getCases(projectId: number, options?: { 
-    suite_id?: number; 
-    section_id?: number; 
+  async getCases(projectId: number, options?: {
+    suite_id?: number;
+    section_id?: number;
     fields?: string;
     created_after?: number;
     created_before?: number;
     created_by?: number[];
     filter?: string;
-    limit?: number; 
+    limit?: number;
     milestone_id?: number[];
     offset?: number;
     priority_id?: number[];
@@ -249,13 +437,13 @@ export class TestRailClient {
     // Apply field filtering if requested
     if (options?.fields && response.cases) {
       const fieldValidation = await validateFieldsForProject(this, projectId, options.fields);
-      
+
       if (fieldValidation.invalid.length > 0) {
         console.warn(`Warning: Invalid fields requested for project ${projectId}: ${fieldValidation.invalid.join(', ')}`);
       }
-      
+
       const filteredCases = filterFields(response.cases, fieldValidation.valid.join(','));
-      
+
       return {
         ...response,
         cases: filteredCases,
@@ -317,34 +505,34 @@ export class TestRailClient {
   }
 
   async moveCasesToSection(sectionId: number, suiteId: number, caseIds: number[]): Promise<any> {
-    return this.request('POST', `move_cases_to_section/${sectionId}`, { 
-      suite_id: suiteId, 
-      case_ids: caseIds 
+    return this.request('POST', `move_cases_to_section/${sectionId}`, {
+      suite_id: suiteId,
+      case_ids: caseIds
     });
   }
 
   async deleteCases(projectId: number, caseIds: number[], suiteId?: number, soft?: boolean): Promise<any> {
     let endpoint = `delete_cases/${projectId}`;
     const params = new URLSearchParams();
-    
+
     if (suiteId) params.append('suite_id', suiteId.toString());
     if (soft !== undefined) params.append('soft', soft ? '1' : '0');
-    
+
     if (params.toString()) {
       endpoint += `&${params.toString()}`;
     }
-    
+
     return this.request('POST', endpoint, { case_ids: caseIds });
   }
 
   // Test Runs
-  async getRuns(projectId: number, options?: { 
+  async getRuns(projectId: number, options?: {
     created_after?: number;
     created_before?: number;
     created_by?: number[];
-    is_completed?: boolean; 
-    limit?: number; 
-    offset?: number; 
+    is_completed?: boolean;
+    limit?: number;
+    offset?: number;
     milestone_id?: number[];
     refs_filter?: string;
     suite_id?: number[];
@@ -394,11 +582,11 @@ export class TestRailClient {
   }
 
   // Test Results
-  async getResults(testId: number, options?: { 
-    limit?: number; 
-    offset?: number; 
-    defects_filter?: string; 
-    status_id?: number[] 
+  async getResults(testId: number, options?: {
+    limit?: number;
+    offset?: number;
+    defects_filter?: string;
+    status_id?: number[]
   }): Promise<any> {
     let endpoint = `get_results/${testId}`;
     const params = new URLSearchParams();
@@ -415,11 +603,11 @@ export class TestRailClient {
     return this.request('GET', endpoint);
   }
 
-  async getResultsForCase(runId: number, caseId: number, options?: { 
-    defects_filter?: string; 
-    limit?: number; 
-    offset?: number; 
-    status_id?: number[] 
+  async getResultsForCase(runId: number, caseId: number, options?: {
+    defects_filter?: string;
+    limit?: number;
+    offset?: number;
+    status_id?: number[]
   }): Promise<any> {
     let endpoint = `get_results_for_case/${runId}/${caseId}`;
     const params = new URLSearchParams();
@@ -436,14 +624,14 @@ export class TestRailClient {
     return this.request('GET', endpoint);
   }
 
-  async getResultsForRun(runId: number, options?: { 
-    created_after?: number; 
-    created_before?: number; 
-    created_by?: number[]; 
-    defects_filter?: string; 
-    limit?: number; 
-    offset?: number; 
-    status_id?: number[] 
+  async getResultsForRun(runId: number, options?: {
+    created_after?: number;
+    created_before?: number;
+    created_by?: number[];
+    defects_filter?: string;
+    limit?: number;
+    offset?: number;
+    status_id?: number[]
   }): Promise<any> {
     let endpoint = `get_results_for_run/${runId}`;
     const params = new URLSearchParams();
@@ -480,14 +668,14 @@ export class TestRailClient {
   }
 
   // Test Plans
-  async getPlans(projectId: number, options?: { 
-    created_after?: number; 
-    created_before?: number; 
-    created_by?: number[]; 
-    is_completed?: boolean; 
-    limit?: number; 
-    offset?: number; 
-    milestone_id?: number[] 
+  async getPlans(projectId: number, options?: {
+    created_after?: number;
+    created_before?: number;
+    created_by?: number[];
+    is_completed?: boolean;
+    limit?: number;
+    offset?: number;
+    milestone_id?: number[]
   }): Promise<any> {
     let endpoint = `get_plans/${projectId}`;
     const params = new URLSearchParams();
@@ -552,22 +740,22 @@ export class TestRailClient {
   }
 
   // Sections
-  async getSections(projectId: number, options?: { 
+  async getSections(projectId: number, options?: {
     suite_id?: number;
     limit?: number;
     offset?: number;
   }): Promise<any> {
     let endpoint = `get_sections/${projectId}`;
     const params = new URLSearchParams();
-    
+
     if (options?.suite_id) params.append('suite_id', options.suite_id.toString());
     if (options?.limit) params.append('limit', options.limit.toString());
     if (options?.offset) params.append('offset', options.offset.toString());
-    
+
     if (params.toString()) {
       endpoint += `&${params.toString()}`;
     }
-    
+
     return this.request('GET', endpoint);
   }
 
@@ -663,9 +851,9 @@ export class TestRailClient {
           return fieldName.startsWith('custom_');
         })
         .map((field: any) => field.system_name || field.name);
-      
+
       const allFields = [...STANDARD_CASE_FIELDS, ...customFields];
-      
+
       return {
         standard_fields: STANDARD_CASE_FIELDS,
         custom_fields: customFields,
@@ -720,25 +908,23 @@ export class TestRailClient {
 
   // Attachments
   async addAttachmentToCase(caseId: number, attachment: any): Promise<any> {
-    // Note: attachment uploads require multipart/form-data and special handling
-    // This is a simplified implementation - full implementation would need FormData handling
-    return this.request('POST', `add_attachment_to_case/${caseId}`, attachment);
+    return this.requestWithAttachment('POST', `add_attachment_to_case/${caseId}`, attachment);
   }
 
   async addAttachmentToPlan(planId: number, attachment: any): Promise<any> {
-    return this.request('POST', `add_attachment_to_plan/${planId}`, attachment);
+    return this.requestWithAttachment('POST', `add_attachment_to_plan/${planId}`, attachment);
   }
 
   async addAttachmentToPlanEntry(planId: number, entryId: string, attachment: any): Promise<any> {
-    return this.request('POST', `add_attachment_to_plan_entry/${planId}/${entryId}`, attachment);
+    return this.requestWithAttachment('POST', `add_attachment_to_plan_entry/${planId}/${entryId}`, attachment);
   }
 
   async addAttachmentToResult(resultId: number, attachment: any): Promise<any> {
-    return this.request('POST', `add_attachment_to_result/${resultId}`, attachment);
+    return this.requestWithAttachment('POST', `add_attachment_to_result/${resultId}`, attachment);
   }
 
   async addAttachmentToRun(runId: number, attachment: any): Promise<any> {
-    return this.request('POST', `add_attachment_to_run/${runId}`, attachment);
+    return this.requestWithAttachment('POST', `add_attachment_to_run/${runId}`, attachment);
   }
 
   async getAttachmentsForCase(caseId: number, limit?: number, offset?: number): Promise<any> {
@@ -845,15 +1031,15 @@ export class TestRailClient {
   async getTest(testId: number, withData?: string): Promise<any> {
     let endpoint = `get_test/${testId}`;
     const params: string[] = [];
-    
+
     if (withData) {
       params.push(`with_data=${withData}`);
     }
-    
+
     if (params.length > 0) {
       endpoint += '&' + params.join('&');
     }
-    
+
     return this.request('GET', endpoint);
   }
 
@@ -865,16 +1051,16 @@ export class TestRailClient {
   } = {}): Promise<any> {
     let endpoint = `get_tests/${runId}`;
     const params: string[] = [];
-    
+
     if (options.statusId) params.push(`status_id=${options.statusId}`);
     if (options.limit) params.push(`limit=${options.limit}`);
     if (options.offset) params.push(`offset=${options.offset}`);
     if (options.labelId) params.push(`label_id=${options.labelId}`);
-    
+
     if (params.length > 0) {
       endpoint += '&' + params.join('&');
     }
-    
+
     return this.request('GET', endpoint);
   }
 
@@ -897,14 +1083,14 @@ export class TestRailClient {
   } = {}): Promise<any> {
     let endpoint = `get_labels/${projectId}`;
     const params: string[] = [];
-    
+
     if (options.offset) params.push(`offset=${options.offset}`);
     if (options.limit) params.push(`limit=${options.limit}`);
-    
+
     if (params.length > 0) {
       endpoint += '&' + params.join('&');
     }
-    
+
     return this.request('GET', endpoint);
   }
 
@@ -933,7 +1119,7 @@ export class TestRailClient {
   } = {}): Promise<any> {
     let endpoint = `get_shared_steps/${projectId}`;
     const params: string[] = [];
-    
+
     if (options.created_after) params.push(`created_after=${options.created_after}`);
     if (options.created_before) params.push(`created_before=${options.created_before}`);
     if (options.created_by) params.push(`created_by=${options.created_by.join(',')}`);
@@ -942,11 +1128,11 @@ export class TestRailClient {
     if (options.updated_after) params.push(`updated_after=${options.updated_after}`);
     if (options.updated_before) params.push(`updated_before=${options.updated_before}`);
     if (options.refs) params.push(`refs=${options.refs}`);
-    
+
     if (params.length > 0) {
       endpoint += '&' + params.join('&');
     }
-    
+
     return this.request('GET', endpoint);
   }
 

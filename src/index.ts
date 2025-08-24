@@ -8,7 +8,6 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
   Tool,
-  Prompt,
 } from "@modelcontextprotocol/sdk/types.js";
 import { TestRailClient } from "./testrail-client.js";
 import { parseCredentials } from "./config.js";
@@ -44,6 +43,11 @@ class TestRailMCPServer {
     this.server = new Server({
       name: "testrail-mcp-server",
       version: "1.0.0",
+    }, {
+      capabilities: {
+        tools: {},
+        prompts: {}
+      }
     });
 
     this.setupToolHandlers();
@@ -70,7 +74,15 @@ class TestRailMCPServer {
         // Find and execute the appropriate tool
         const tool = this.tools.find(t => t.name === name);
         if (!tool) {
-          throw new Error(`Unknown tool: ${name}`);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Error: Unknown tool: ${name}`,
+              },
+            ],
+            isError: true,
+          };
         }
 
         const result = await this.executeToolMethod(name, args || {});
@@ -105,7 +117,7 @@ class TestRailMCPServer {
     });
 
     this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
-      const { name, arguments: args } = request.params;
+      const { name, arguments: promptArgs } = request.params;
 
       const prompt = this.promptLoader.findPrompt(name);
       if (!prompt) {
@@ -122,7 +134,7 @@ class TestRailMCPServer {
         // Use the prompt loader to generate content (handles both default and user prompts)
         const promptContent = await this.promptLoader.generatePromptContent(
           name,
-          args || {},
+          promptArgs || {},
           this.generateDefaultPromptContent.bind(this)
         );
 
@@ -452,16 +464,16 @@ class TestRailMCPServer {
     }
   }
 
-  private async generateDefaultPromptContent(promptName: string, args: any): Promise<string> {
+  private async generateDefaultPromptContent(promptName: string, _args: any): Promise<string> {
     switch (promptName) {
       case "testrail-welcome":
-        return this.generateWelcomePrompt(args);
+        return this.generateWelcomePrompt();
       default:
         throw new Error(`Unknown prompt: ${promptName}`);
     }
   }
 
-  private async generateWelcomePrompt(args: any): Promise<string> {
+  private async generateWelcomePrompt(): Promise<string> {
     return `# Welcome to TestRail MCP Server! 🚀
 
 The TestRail MCP Server gives you tools to interact with TestRail API. Here are some simple commands to get you started:

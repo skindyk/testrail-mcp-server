@@ -6,6 +6,7 @@ A Model Context Protocol (MCP) server that provides seamless integration between
 
 - **Natural Language Interface**: Interact with TestRail using conversational commands
 - **Complete TestRail API Coverage**: 119 tools covering all TestRail endpoints
+- **Full File Upload Support**: Upload attachments to test cases, results, plans, and runs
 - **Enterprise Support**: Advanced features including BDD, attachments, shared steps, datasets
 - **Dynamic Field Filtering**: Reduce get_cases response size by 80-95% for large amounts of test cases
 - **Flexible Tool Control**: Limit available tools using environment variables
