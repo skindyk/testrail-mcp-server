@@ -19,6 +19,7 @@ function processAttachment(attachment: any): AttachmentData {
   if (typeof attachment === 'string') {
     // Check if it's a file path
     if (fs.existsSync(attachment)) {
+
       const content = fs.readFileSync(attachment);
       const filename = path.basename(attachment);
       const ext = path.extname(attachment).toLowerCase();
@@ -121,6 +122,16 @@ function processAttachment(attachment: any): AttachmentData {
       const filename = `attachment_${Date.now()}${ext}`;
 
       return { filename, content, contentType };
+    }
+
+    // Check if it looks like a file path that doesn't exist
+    // More precise check: must have path separators AND file extension
+    const hasPathSeparator = attachment.includes('/') || attachment.includes('\\');
+    const hasFileExtension = /\.[a-zA-Z0-9]{1,10}$/.test(attachment);
+    const looksLikeFilePath = hasPathSeparator || (hasFileExtension && attachment.length < 500);
+
+    if (looksLikeFilePath) {
+      throw new Error(`File not found: ${attachment}. Please use the full absolute file path (e.g., 'C:\\Users\\user\\file.png' or '/home/user/file.png').`);
     }
 
     // Treat as plain base64

@@ -2259,7 +2259,7 @@ export const tools: Tool[] = [
   // Attachments
   {
     name: "add_attachment_to_case",
-    description: "Upload and attach a file to a test case in TestRail. Attachments support documentation, screenshots, test data, or any files relevant to test case execution. Requires TestRail 6.5.2+. Maximum file size is 256MB. Use this to provide additional context or resources for test execution.",
+    description: "Upload and attach a file to a test case in TestRail. Attachments support documentation, screenshots, test data, or any files relevant to test case execution. Requires TestRail 6.5.2+. Maximum file size is 256MB. IMPORTANT: Always use the full absolute file path (e.g., 'C:\\Users\\user\\file.png' or '/home/user/file.png') - relative paths may fail. Use this to provide additional context or resources for test execution.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2269,7 +2269,7 @@ export const tools: Tool[] = [
         },
         attachment: {
           type: "string",
-          description: "The file to upload, either as base64 encoded content or a file path. Supported formats include images, documents, spreadsheets, and other common file types."
+          description: "The file to upload - MUST be a full absolute file path (e.g., 'C:\\Users\\user\\screenshot.png' on Windows or '/home/user/document.pdf' on Linux/Mac). Do NOT use relative paths like 'file.txt' as they will fail. Also supports base64 encoded content. Supported formats include images, documents, spreadsheets, and other common file types."
         }
       },
       required: ["case_id", "attachment"]
@@ -2277,7 +2277,7 @@ export const tools: Tool[] = [
   },
   {
     name: "add_attachment_to_plan",
-    description: "Upload and attach a file to a test plan in TestRail. Plan attachments can include test strategies, requirements documents, or any files relevant to the overall test plan. Requires TestRail 6.3+. Maximum file size is 256MB. Use this to provide planning context or reference materials.",
+    description: "Upload and attach a file to a test plan in TestRail. Plan attachments can include test strategies, requirements documents, or any files relevant to the overall test plan. Requires TestRail 6.3+. Maximum file size is 256MB. IMPORTANT: Always use the full absolute file path (e.g., 'C:\\Users\\user\\file.png' or '/home/user/file.png') - relative paths may fail. Use this to provide planning context or reference materials.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2287,7 +2287,7 @@ export const tools: Tool[] = [
         },
         attachment: {
           type: "string",
-          description: "The file to upload, either as base64 encoded content or a file path. Supported formats include images, documents, spreadsheets, and other common file types."
+          description: "The file to upload - MUST be a full absolute file path (e.g., 'C:\\Users\\user\\test-plan.pdf' on Windows or '/home/user/strategy.docx' on Linux/Mac). Do NOT use relative paths like 'file.txt' as they will fail. Also supports base64 encoded content. Supported formats include images, documents, spreadsheets, and other common file types."
         }
       },
       required: ["plan_id", "attachment"]
@@ -2295,7 +2295,7 @@ export const tools: Tool[] = [
   },
   {
     name: "add_attachment_to_plan_entry",
-    description: "Upload and attach a file to a specific test plan entry (test run within a plan). Plan entry attachments can include configuration files, environment details, or execution-specific documentation. Requires TestRail 6.3+. Maximum file size is 256MB. Use this to provide context for specific test run configurations.",
+    description: "Upload and attach a file to a specific test plan entry (test run within a plan). Plan entry attachments can include configuration files, environment details, or execution-specific documentation. Requires TestRail 6.3+. Maximum file size is 256MB. IMPORTANT: Always use the full absolute file path (e.g., 'C:\\Users\\user\\file.png' or '/home/user/file.png') - relative paths may fail. Use this to provide context for specific test run configurations.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2309,7 +2309,7 @@ export const tools: Tool[] = [
         },
         attachment: {
           type: "string",
-          description: "The file to upload, either as base64 encoded content or a file path. Supported formats include images, documents, spreadsheets, and other common file types."
+          description: "The file to upload - MUST be a full absolute file path (e.g., 'C:\\Users\\user\\config.json' on Windows or '/home/user/environment.yml' on Linux/Mac). Do NOT use relative paths like 'file.txt' as they will fail. Also supports base64 encoded content. Supported formats include images, documents, spreadsheets, and other common file types."
         }
       },
       required: ["plan_id", "entry_id", "attachment"]
@@ -2317,7 +2317,7 @@ export const tools: Tool[] = [
   },
   {
     name: "add_attachment_to_result",
-    description: "Upload and attach a file to a test result. Result attachments typically include screenshots, logs, defect evidence, or any files generated during test execution. Requires TestRail 5.7+. Maximum file size is 256MB. Requires 'edit test results' permission. Use this to provide execution evidence and debugging information.",
+    description: "Upload and attach a file to a test result. Result attachments typically include screenshots, logs, defect evidence, or any files generated during test execution. Requires TestRail 5.7+. Maximum file size is 256MB. Requires 'edit test results' permission. IMPORTANT: Always use the full absolute file path (e.g., 'C:\\Users\\user\\file.png' or '/home/user/file.png') - relative paths may fail. Use this to provide execution evidence and debugging information.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2327,7 +2327,7 @@ export const tools: Tool[] = [
         },
         attachment: {
           type: "string",
-          description: "The file to upload, either as base64 encoded content or a file path. Common formats include screenshots (PNG, JPG), logs (TXT, LOG), or reports (PDF, HTML)."
+          description: "The file to upload - MUST be a full absolute file path (e.g., 'C:\\Users\\user\\screenshot.png' on Windows or '/home/user/error.log' on Linux/Mac). Do NOT use relative paths like 'file.txt' as they will fail. Also supports base64 encoded content. Common formats include screenshots (PNG, JPG), logs (TXT, LOG), or reports (PDF, HTML)."
         }
       },
       required: ["result_id", "attachment"]
@@ -2335,7 +2335,7 @@ export const tools: Tool[] = [
   },
   {
     name: "add_attachment_to_run",
-    description: "Upload and attach a file to a test run. Run attachments can include execution reports, environment configurations, or any files relevant to the entire test run. Requires TestRail 6.3+. Maximum file size is 256MB. Use this to provide run-level context and documentation.",
+    description: "Upload and attach a file to a test run. Run attachments can include execution reports, environment configurations, or any files relevant to the entire test run. Requires TestRail 6.3+. Maximum file size is 256MB. IMPORTANT: Always use the full absolute file path (e.g., 'C:\\Users\\user\\file.png' or '/home/user/file.png') - relative paths may fail. Use this to provide run-level context and documentation.",
     inputSchema: {
       type: "object",
       properties: {
@@ -2345,7 +2345,7 @@ export const tools: Tool[] = [
         },
         attachment: {
           type: "string",
-          description: "The file to upload, either as base64 encoded content or a file path. Supported formats include images, documents, spreadsheets, and other common file types."
+          description: "The file to upload - MUST be a full absolute file path (e.g., 'C:\\Users\\user\\test-report.pdf' on Windows or '/home/user/execution-log.txt' on Linux/Mac). Do NOT use relative paths like 'file.txt' as they will fail. Also supports base64 encoded content. Supported formats include images, documents, spreadsheets, and other common file types."
         }
       },
       required: ["run_id", "attachment"]
