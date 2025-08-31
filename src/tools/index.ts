@@ -918,6 +918,123 @@ export const tools: Tool[] = [
       required: ["run_id"]
     }
   },
+  {
+    name: "bulk_close_runs",
+    description: "Close multiple test runs at once to efficiently archive completed testing cycles. Since TestRail doesn't provide native bulk closure functionality, this tool processes each run individually and provides comprehensive feedback. WARNING: This action cannot be undone for successfully closed runs. Use this for large-scale test run management when teams have hundreds or thousands of open test runs that need to be archived.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        run_ids: {
+          type: "array",
+          items: {
+            type: "integer"
+          },
+          description: "Array of test run IDs to close. Each ID must be a valid, existing test run ID. You can get run IDs using get_runs. For safety, consider testing with a small subset first."
+        },
+        use_batch_processing: {
+          type: "boolean",
+          description: "Set to true to process runs in batches with delays between batches to avoid overwhelming the TestRail API. Recommended for large numbers of runs (100+). Default: false."
+        },
+        batch_size: {
+          type: "integer",
+          description: "Number of runs to process in each batch when use_batch_processing is true. Recommended values: 10-50 depending on your TestRail instance performance. Default: 10."
+        },
+        delay_ms: {
+          type: "integer",
+          description: "Delay in milliseconds between batches when use_batch_processing is true. Higher values reduce API load but increase total processing time. Default: 1000 (1 second)."
+        }
+      },
+      required: ["run_ids"]
+    }
+  },
+  {
+    name: "get_open_runs_for_project",
+    description: "Get all open (non-completed) test runs for a project, optimized for bulk operations. This helper tool makes it easy to identify which test runs need to be closed without having to manually filter through all runs. Perfect for preparing bulk close operations on projects with many open test runs.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        project_id: {
+          type: "integer",
+          description: "The unique identifier of the TestRail project to get open runs from. Must be a valid, existing project ID."
+        },
+        created_before: {
+          type: "integer",
+          description: "Only return test runs created before this date (UNIX timestamp). Useful for closing old runs while keeping recent ones active."
+        },
+        suite_id: {
+          type: "array",
+          items: {
+            type: "integer"
+          },
+          description: "Filter by specific test suite IDs. Use get_suites to find available suite IDs. Useful for closing runs from specific test suites only."
+        },
+        limit: {
+          type: "integer",
+          description: "Maximum number of open runs to return. Use this to process runs in manageable chunks for very large projects."
+        },
+        include_run_details: {
+          type: "boolean",
+          description: "Set to true to include full run details, false to return only IDs and basic info (default). Use false for bulk operations to reduce response size."
+        }
+      },
+      required: ["project_id"]
+    }
+  },
+  {
+    name: "bulk_close_plans",
+    description: "Close multiple test plans at once to efficiently archive completed testing initiatives. Since TestRail doesn't provide native bulk plan closure functionality, this tool processes each plan individually and provides comprehensive feedback. WARNING: This action cannot be undone for successfully closed plans. Use this for large-scale test plan management when teams have hundreds or thousands of open test plans that need to be archived.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        plan_ids: {
+          type: "array",
+          items: {
+            type: "integer"
+          },
+          description: "Array of test plan IDs to close. Each ID must be a valid, existing test plan ID. You can get plan IDs using get_plans. For safety, consider testing with a small subset first."
+        },
+        use_batch_processing: {
+          type: "boolean",
+          description: "Set to true to process plans in batches with delays between batches to avoid overwhelming the TestRail API. Recommended for large numbers of plans (100+). Default: false."
+        },
+        batch_size: {
+          type: "integer",
+          description: "Number of plans to process in each batch when use_batch_processing is true. Recommended values: 10-50 depending on your TestRail instance performance. Default: 10."
+        },
+        delay_ms: {
+          type: "integer",
+          description: "Delay in milliseconds between batches when use_batch_processing is true. Higher values reduce API load but increase total processing time. Default: 1000 (1 second)."
+        }
+      },
+      required: ["plan_ids"]
+    }
+  },
+  {
+    name: "get_open_plans_for_project",
+    description: "Get all open (non-completed) test plans for a project, optimized for bulk operations. This helper tool makes it easy to identify which test plans need to be closed without having to manually filter through all plans. Perfect for preparing bulk close operations on projects with many open test plans.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        project_id: {
+          type: "integer",
+          description: "The unique identifier of the TestRail project to get open plans from. Must be a valid, existing project ID."
+        },
+        created_before: {
+          type: "integer",
+          description: "Only return test plans created before this date (UNIX timestamp). Useful for closing old plans while keeping recent ones active."
+        },
+        limit: {
+          type: "integer",
+          description: "Maximum number of open plans to return. Use this to process plans in manageable chunks for very large projects."
+        },
+        include_plan_details: {
+          type: "boolean",
+          description: "Set to true to include full plan details, false to return only IDs and basic info (default). Use false for bulk operations to reduce response size."
+        }
+      },
+      required: ["project_id"]
+    }
+  },
 
   // Test Results
   {

@@ -592,6 +592,286 @@ export class TestRailClient {
     return this.request('POST', endpoint, {});
   }
 
+  // Bulk operations for test runs
+  async bulkCloseRuns(runIds: number[]): Promise<any> {
+    const results = [];
+    const errors = [];
+
+    for (const runId of runIds) {
+      try {
+        const result = await this.closeRun(runId);
+        results.push({ 
+          run_id: runId, 
+          status: 'success', 
+          result: result 
+        });
+      } catch (error) {
+        errors.push({ 
+          run_id: runId, 
+          status: 'error', 
+          error: error instanceof Error ? error.message : String(error) 
+        });
+      }
+    }
+
+    return {
+      total_requested: runIds.length,
+      successful_closures: results.length,
+      failed_closures: errors.length,
+      results: results,
+      errors: errors,
+      summary: `Successfully closed ${results.length} of ${runIds.length} test runs.`
+    };
+  }
+
+  async bulkCloseRunsBatch(runIds: number[], batchSize: number = 10, delayMs: number = 1000, onProgress?: (message: string) => void): Promise<any> {
+    const allResults = [];
+    const allErrors = [];
+    const totalRuns = runIds.length;
+    const totalBatches = Math.ceil(totalRuns / batchSize);
+    const progressMessages: Array<{timestamp: string, message: string}> = [];
+
+    const logProgress = (message: string) => {
+      progressMessages.push({
+        timestamp: new Date().toISOString(),
+        message: message
+      });
+      if (onProgress) {
+        onProgress(message);
+      }
+    };
+
+    logProgress(`Starting bulk closure: ${totalRuns} test runs in ${totalBatches} batches of ${batchSize}...`);
+
+    for (let i = 0; i < runIds.length; i += batchSize) {
+      const batch = runIds.slice(i, i + batchSize);
+      const batchNumber = Math.floor(i / batchSize) + 1;
+      
+      logProgress(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} runs)...`);
+
+      // Process current batch
+      const batchResults = [];
+      const batchErrors = [];
+
+      for (const runId of batch) {
+        try {
+          const result = await this.closeRun(runId);
+          batchResults.push({ 
+            run_id: runId, 
+            status: 'success', 
+            result: result,
+            batch: batchNumber
+          });
+          allResults.push(batchResults[batchResults.length - 1]);
+        } catch (error) {
+          const errorEntry = { 
+            run_id: runId, 
+            status: 'error', 
+            error: error instanceof Error ? error.message : String(error),
+            batch: batchNumber
+          };
+          batchErrors.push(errorEntry);
+          allErrors.push(errorEntry);
+        }
+      }
+
+      logProgress(`Batch ${batchNumber} completed: ${batchResults.length} successful, ${batchErrors.length} failed`);
+
+      // Add delay between batches to avoid overwhelming the API
+      if (i + batchSize < runIds.length && delayMs > 0) {
+        logProgress(`Waiting ${delayMs}ms before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+
+    logProgress(`Bulk closure completed: ${allResults.length}/${totalRuns} runs closed successfully`);
+
+    return {
+      total_requested: totalRuns,
+      successful_closures: allResults.length,
+      failed_closures: allErrors.length,
+      batches_processed: totalBatches,
+      batch_size: batchSize,
+      batch_delay_ms: delayMs,
+      processing_details: {
+        total_batches: totalBatches,
+        batch_size_used: batchSize,
+        delay_between_batches: delayMs,
+        batches_completed: totalBatches
+      },
+      progress_log: progressMessages,
+      results: allResults,
+      errors: allErrors,
+      summary: `Successfully closed ${allResults.length} of ${totalRuns} test runs across ${totalBatches} batches with ${delayMs}ms delay between batches.`,
+      completion_percentage: Math.round((allResults.length / totalRuns) * 100)
+    };
+  }
+
+  // Bulk operations for test plans
+  async bulkClosePlans(planIds: number[]): Promise<any> {
+    const results = [];
+    const errors = [];
+
+    for (const planId of planIds) {
+      try {
+        const result = await this.closePlan(planId);
+        results.push({ 
+          plan_id: planId, 
+          status: 'success', 
+          result: result 
+        });
+      } catch (error) {
+        errors.push({ 
+          plan_id: planId, 
+          status: 'error', 
+          error: error instanceof Error ? error.message : String(error) 
+        });
+      }
+    }
+
+    return {
+      total_requested: planIds.length,
+      successful_closures: results.length,
+      failed_closures: errors.length,
+      results: results,
+      errors: errors,
+      summary: `Successfully closed ${results.length} of ${planIds.length} test plans.`
+    };
+  }
+
+  async bulkClosePlansBatch(planIds: number[], batchSize: number = 10, delayMs: number = 1000, onProgress?: (message: string) => void): Promise<any> {
+    const allResults = [];
+    const allErrors = [];
+    const totalPlans = planIds.length;
+    const totalBatches = Math.ceil(totalPlans / batchSize);
+    const progressMessages: Array<{timestamp: string, message: string}> = [];
+
+    const logProgress = (message: string) => {
+      progressMessages.push({
+        timestamp: new Date().toISOString(),
+        message: message
+      });
+      if (onProgress) {
+        onProgress(message);
+      }
+    };
+
+    logProgress(`Starting bulk plan closure: ${totalPlans} test plans in ${totalBatches} batches of ${batchSize}...`);
+
+    for (let i = 0; i < planIds.length; i += batchSize) {
+      const batch = planIds.slice(i, i + batchSize);
+      const batchNumber = Math.floor(i / batchSize) + 1;
+      
+      logProgress(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} plans)...`);
+
+      // Process current batch
+      const batchResults = [];
+      const batchErrors = [];
+
+      for (const planId of batch) {
+        try {
+          const result = await this.closePlan(planId);
+          batchResults.push({ 
+            plan_id: planId, 
+            status: 'success', 
+            result: result,
+            batch: batchNumber
+          });
+          allResults.push(batchResults[batchResults.length - 1]);
+        } catch (error) {
+          const errorEntry = { 
+            plan_id: planId, 
+            status: 'error', 
+            error: error instanceof Error ? error.message : String(error),
+            batch: batchNumber
+          };
+          batchErrors.push(errorEntry);
+          allErrors.push(errorEntry);
+        }
+      }
+
+      logProgress(`Batch ${batchNumber} completed: ${batchResults.length} successful, ${batchErrors.length} failed`);
+
+      // Add delay between batches to avoid overwhelming the API
+      if (i + batchSize < planIds.length && delayMs > 0) {
+        logProgress(`Waiting ${delayMs}ms before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+
+    logProgress(`Bulk plan closure completed: ${allResults.length}/${totalPlans} plans closed successfully`);
+
+    return {
+      total_requested: totalPlans,
+      successful_closures: allResults.length,
+      failed_closures: allErrors.length,
+      batches_processed: totalBatches,
+      batch_size: batchSize,
+      batch_delay_ms: delayMs,
+      processing_details: {
+        total_batches: totalBatches,
+        batch_size_used: batchSize,
+        delay_between_batches: delayMs,
+        batches_completed: totalBatches
+      },
+      progress_log: progressMessages,
+      results: allResults,
+      errors: allErrors,
+      summary: `Successfully closed ${allResults.length} of ${totalPlans} test plans across ${totalBatches} batches with ${delayMs}ms delay between batches.`,
+      completion_percentage: Math.round((allResults.length / totalPlans) * 100)
+    };
+  }
+
+  // Helper method to get open plans for a project
+  async getOpenPlansForProject(projectId: number, options?: {
+    created_before?: number;
+    limit?: number;
+    include_plan_details?: boolean;
+  }): Promise<any> {
+    const plans = await this.getPlans(projectId, {
+      is_completed: false,
+      limit: options?.limit,
+      offset: 0
+    });
+
+    // Handle different response formats from TestRail API
+    const plansList = plans.plans || plans;
+    
+    if (!Array.isArray(plansList)) {
+      return {
+        total_open_plans: 0,
+        plan_ids: [],
+        plans_summary: [],
+        project_id: projectId
+      };
+    }
+
+    let openPlans = plansList.filter((plan: any) => !plan.is_completed);
+
+    // Filter by creation date if specified
+    if (options?.created_before) {
+      openPlans = openPlans.filter((plan: any) => 
+        plan.created_on < options!.created_before!
+      );
+    }
+
+    const planIds = openPlans.map((plan: any) => plan.id);
+    const plansSummary = options?.include_plan_details 
+      ? openPlans 
+      : openPlans.map((plan: any) => ({
+          id: plan.id,
+          name: plan.name,
+          created_on: plan.created_on
+        }));
+
+    return {
+      total_open_plans: openPlans.length,
+      plan_ids: planIds,
+      plans_summary: plansSummary,
+      project_id: projectId
+    };
+  }
+
   // Test Results
   async getResults(testId: number, options?: {
     limit?: number;
@@ -1250,5 +1530,46 @@ export class TestRailClient {
   // Roles
   async getRoles(): Promise<any> {
     return this.request('GET', 'get_roles');
+  }
+
+  // Helper method to get open test runs for bulk operations
+  async getOpenRunsForProject(projectId: number, options?: {
+    created_before?: number;
+    suite_id?: number[];
+    limit?: number;
+    include_run_details?: boolean;
+  }): Promise<any> {
+    const runOptions = {
+      is_completed: false, // Only get open runs
+      limit: options?.limit,
+      created_before: options?.created_before,
+      suite_id: options?.suite_id
+    };
+
+    const response = await this.getRuns(projectId, runOptions);
+    
+    // Handle different response formats from TestRail API
+    const runs = Array.isArray(response) ? response : (response.runs || []);
+    
+    if (!options?.include_run_details) {
+      // Return just the IDs and basic info for bulk operations
+      return {
+        total_open_runs: runs.length,
+        run_ids: runs.map((run: any) => run.id),
+        runs_summary: runs.map((run: any) => ({
+          id: run.id,
+          name: run.name,
+          created_on: run.created_on,
+          created_by: run.created_by
+        })),
+        project_id: projectId
+      };
+    }
+
+    return {
+      total_open_runs: runs.length,
+      runs: runs,
+      project_id: projectId
+    };
   }
 }

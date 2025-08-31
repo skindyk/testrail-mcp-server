@@ -46,12 +46,35 @@ class TestRailMCPServer {
     }, {
       capabilities: {
         tools: {},
-        prompts: {}
+        prompts: {},
+        logging: {}
       }
     });
 
     this.setupToolHandlers();
     this.setupPromptHandlers();
+    this.setupLoggingHandlers();
+  }
+
+  private sendLogMessage(level: 'debug' | 'info' | 'notice' | 'warning' | 'error' | 'critical' | 'alert' | 'emergency', message: string, data?: any) {
+    this.server.notification({
+      method: "notifications/message",
+      params: {
+        level: level,
+        logger: "testrail-bulk-operations",
+        data: {
+          message: message,
+          timestamp: new Date().toISOString(),
+          ...data
+        }
+      }
+    });
+  }
+
+  private setupLoggingHandlers() {
+    // MCP logging doesn't require explicit request handlers for setLevel
+    // The logging capability declaration is sufficient
+    // Clients can send logging/setLevel requests, but we don't need to handle them explicitly for basic functionality
   }
 
   private setupToolHandlers() {
@@ -223,6 +246,41 @@ class TestRailMCPServer {
         return this.testRailClient.closeRun(args.run_id);
       case "delete_run":
         return this.testRailClient.deleteRun(args.run_id, args.soft);
+      case "bulk_close_runs":
+        if (args.use_batch_processing) {
+          return this.testRailClient.bulkCloseRunsBatch(
+            args.run_ids,
+            args.batch_size || 10,
+            args.delay_ms || 1000,
+            (message: string) => this.sendLogMessage('info', message)  // Use proper MCP logging
+          );
+        } else {
+          return this.testRailClient.bulkCloseRuns(args.run_ids);
+        }
+      case "get_open_runs_for_project":
+        return this.testRailClient.getOpenRunsForProject(args.project_id, {
+          created_before: args.created_before,
+          suite_id: args.suite_id,
+          limit: args.limit,
+          include_run_details: args.include_run_details
+        });
+      case "bulk_close_plans":
+        if (args.use_batch_processing) {
+          return this.testRailClient.bulkClosePlansBatch(
+            args.plan_ids,
+            args.batch_size || 10,
+            args.delay_ms || 1000,
+            (message: string) => this.sendLogMessage('info', message)  // Use proper MCP logging
+          );
+        } else {
+          return this.testRailClient.bulkClosePlans(args.plan_ids);
+        }
+      case "get_open_plans_for_project":
+        return this.testRailClient.getOpenPlansForProject(args.project_id, {
+          created_before: args.created_before,
+          limit: args.limit,
+          include_plan_details: args.include_plan_details
+        });
 
       // Test Results
       case "get_results":
