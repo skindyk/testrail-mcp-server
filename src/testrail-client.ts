@@ -592,6 +592,47 @@ export class TestRailClient {
     return this.request('POST', endpoint, {});
   }
 
+  // Helper method for name filtering
+  private filterByName(items: any[], nameFilter?: {
+    pattern: string;
+    match_type?: 'contains' | 'exact' | 'starts_with' | 'ends_with' | 'regex';
+    case_sensitive?: boolean;
+  }): any[] {
+    if (!nameFilter || !nameFilter.pattern) {
+      return items;
+    }
+
+    const { pattern, match_type = 'contains', case_sensitive = false } = nameFilter;
+    
+    return items.filter((item: any) => {
+      if (!item.name) return false;
+      
+      const itemName = case_sensitive ? item.name : item.name.toLowerCase();
+      const searchPattern = case_sensitive ? pattern : pattern.toLowerCase();
+      
+      switch (match_type) {
+        case 'exact':
+          return itemName === searchPattern;
+        case 'starts_with':
+          return itemName.startsWith(searchPattern);
+        case 'ends_with':
+          return itemName.endsWith(searchPattern);
+        case 'regex':
+          try {
+            const flags = case_sensitive ? 'g' : 'gi';
+            const regex = new RegExp(pattern, flags);
+            return regex.test(item.name);
+          } catch (error) {
+            // If regex is invalid, fall back to contains
+            return itemName.includes(searchPattern);
+          }
+        case 'contains':
+        default:
+          return itemName.includes(searchPattern);
+      }
+    });
+  }
+
   // Bulk operations for test runs
   async bulkCloseRuns(runIds: number[]): Promise<any> {
     const results = [];
@@ -827,6 +868,11 @@ export class TestRailClient {
     created_before?: number;
     limit?: number;
     include_plan_details?: boolean;
+    name_filter?: {
+      pattern: string;
+      match_type?: 'contains' | 'exact' | 'starts_with' | 'ends_with' | 'regex';
+      case_sensitive?: boolean;
+    };
   }): Promise<any> {
     const plans = await this.getPlans(projectId, {
       is_completed: false,
@@ -853,6 +899,11 @@ export class TestRailClient {
       openPlans = openPlans.filter((plan: any) => 
         plan.created_on < options!.created_before!
       );
+    }
+
+    // Apply name filtering if specified
+    if (options?.name_filter) {
+      openPlans = this.filterByName(openPlans, options.name_filter);
     }
 
     const planIds = openPlans.map((plan: any) => plan.id);
@@ -1538,6 +1589,11 @@ export class TestRailClient {
     suite_id?: number[];
     limit?: number;
     include_run_details?: boolean;
+    name_filter?: {
+      pattern: string;
+      match_type?: 'contains' | 'exact' | 'starts_with' | 'ends_with' | 'regex';
+      case_sensitive?: boolean;
+    };
   }): Promise<any> {
     const runOptions = {
       is_completed: false, // Only get open runs
@@ -1549,7 +1605,12 @@ export class TestRailClient {
     const response = await this.getRuns(projectId, runOptions);
     
     // Handle different response formats from TestRail API
-    const runs = Array.isArray(response) ? response : (response.runs || []);
+    let runs = Array.isArray(response) ? response : (response.runs || []);
+    
+    // Apply name filtering if specified
+    if (options?.name_filter) {
+      runs = this.filterByName(runs, options.name_filter);
+    }
     
     if (!options?.include_run_details) {
       // Return just the IDs and basic info for bulk operations

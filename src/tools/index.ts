@@ -949,7 +949,7 @@ export const tools: Tool[] = [
   },
   {
     name: "get_open_runs_for_project",
-    description: "Get all open (non-completed) test runs for a project, optimized for bulk operations. This helper tool makes it easy to identify which test runs need to be closed without having to manually filter through all runs. Perfect for preparing bulk close operations on projects with many open test runs.",
+    description: "Get all open (non-completed) test runs for a project with advanced filtering options. This helper tool makes it easy to identify which test runs need to be closed without having to manually filter through all runs. Perfect for preparing bulk close operations on projects with many open test runs. Supports filtering by creation date, test suites, and run names with flexible pattern matching (contains, exact match, starts with, ends with, or regex).",
     inputSchema: {
       type: "object",
       properties: {
@@ -975,6 +975,26 @@ export const tools: Tool[] = [
         include_run_details: {
           type: "boolean",
           description: "Set to true to include full run details, false to return only IDs and basic info (default). Use false for bulk operations to reduce response size."
+        },
+        name_filter: {
+          type: "object",
+          properties: {
+            pattern: {
+              type: "string",
+              description: "The text pattern to match against test run names. For 'regex' match_type, provide a valid JavaScript regular expression pattern."
+            },
+            match_type: {
+              type: "string",
+              enum: ["contains", "exact", "starts_with", "ends_with", "regex"],
+              description: "The type of matching to perform: 'contains' (default) - substring match, 'exact' - exact string match, 'starts_with' - name begins with pattern, 'ends_with' - name ends with pattern, 'regex' - regular expression pattern match."
+            },
+            case_sensitive: {
+              type: "boolean",
+              description: "Whether the pattern matching should be case sensitive. Default is false (case-insensitive matching)."
+            }
+          },
+          required: ["pattern"],
+          description: "Advanced name filtering options to match test run names. Supports multiple matching strategies including partial matches, exact matches, prefix/suffix matching, and regular expressions. Use 'contains' for simple substring matching, 'exact' for precise matches, 'starts_with'/'ends_with' for prefix/suffix matching, or 'regex' for complex pattern matching. Case sensitivity can be controlled independently."
         }
       },
       required: ["project_id"]
@@ -1011,7 +1031,7 @@ export const tools: Tool[] = [
   },
   {
     name: "get_open_plans_for_project",
-    description: "Get all open (non-completed) test plans for a project, optimized for bulk operations. This helper tool makes it easy to identify which test plans need to be closed without having to manually filter through all plans. Perfect for preparing bulk close operations on projects with many open test plans.",
+    description: "Get all open (non-completed) test plans for a project with advanced filtering options. This helper tool makes it easy to identify which test plans need to be closed without having to manually filter through all plans. Perfect for preparing bulk close operations on projects with many open test plans. Supports filtering by creation date and plan names with flexible pattern matching (contains, exact match, starts with, ends with, or regex).",
     inputSchema: {
       type: "object",
       properties: {
@@ -1030,6 +1050,26 @@ export const tools: Tool[] = [
         include_plan_details: {
           type: "boolean",
           description: "Set to true to include full plan details, false to return only IDs and basic info (default). Use false for bulk operations to reduce response size."
+        },
+        name_filter: {
+          type: "object",
+          properties: {
+            pattern: {
+              type: "string",
+              description: "The text pattern to match against test plan names. For 'regex' match_type, provide a valid JavaScript regular expression pattern."
+            },
+            match_type: {
+              type: "string",
+              enum: ["contains", "exact", "starts_with", "ends_with", "regex"],
+              description: "The type of matching to perform: 'contains' (default) - substring match, 'exact' - exact string match, 'starts_with' - name begins with pattern, 'ends_with' - name ends with pattern, 'regex' - regular expression pattern match."
+            },
+            case_sensitive: {
+              type: "boolean",
+              description: "Whether the pattern matching should be case sensitive. Default is false (case-insensitive matching)."
+            }
+          },
+          required: ["pattern"],
+          description: "Advanced name filtering options to match test plan names. Supports multiple matching strategies including partial matches, exact matches, prefix/suffix matching, and regular expressions. Use 'contains' for simple substring matching, 'exact' for precise matches, 'starts_with'/'ends_with' for prefix/suffix matching, or 'regex' for complex pattern matching. Case sensitivity can be controlled independently."
         }
       },
       required: ["project_id"]

@@ -262,7 +262,8 @@ class TestRailMCPServer {
           created_before: args.created_before,
           suite_id: args.suite_id,
           limit: args.limit,
-          include_run_details: args.include_run_details
+          include_run_details: args.include_run_details,
+          name_filter: args.name_filter
         });
       case "bulk_close_plans":
         if (args.use_batch_processing) {
@@ -279,7 +280,8 @@ class TestRailMCPServer {
         return this.testRailClient.getOpenPlansForProject(args.project_id, {
           created_before: args.created_before,
           limit: args.limit,
-          include_plan_details: args.include_plan_details
+          include_plan_details: args.include_plan_details,
+          name_filter: args.name_filter
         });
 
       // Test Results
