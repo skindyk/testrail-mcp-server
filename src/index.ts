@@ -1,7 +1,5 @@
-#!/usr/bin/env node
-
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -14,7 +12,7 @@ import { parseCredentials } from "./config.js";
 import { tools as allTools } from "./tools/index.js";
 import { PromptLoader } from "./prompts/prompt-loader.js";
 
-function getAllowedTools(): string[] | null {
+export function getAllowedTools(): string[] | null {
   const allowed = process.env.MCP_TOOLS;
   if (!allowed) return null;
   try {
@@ -24,7 +22,7 @@ function getAllowedTools(): string[] | null {
   }
 }
 
-class TestRailMCPServer {
+export class TestRailMCPServer {
   private server: Server;
   private testRailClient: TestRailClient | null = null;
   private tools: Tool[];
@@ -561,15 +559,8 @@ Start with \`Get TestRail projects\` to see what's available!`;
 
 
 
-  async run() {
-    const transport = new StdioServerTransport();
+  async run(transport: Transport) {
     await this.server.connect(transport);
     // Server is now running - no console output needed as it interferes with MCP protocol
   }
 }
-
-const server = new TestRailMCPServer();
-server.run().catch((error) => {
-  console.error("Failed to start TestRail MCP server:", error);
-  process.exit(1);
-});

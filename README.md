@@ -39,9 +39,9 @@ A Model Context Protocol (MCP) server that provides seamless integration between
 
 4.  **Test the server (optional)**:
     ```bash
-    node dist/index.js
+    npm run start:stdio
     ```
-    You should see: `TestRail MCP server running on stdio`
+    You should see a message indicating the server started with stdio transport
 
 ## ⚙️ Configuration
 
@@ -81,6 +81,83 @@ A Model Context Protocol (MCP) server that provides seamless integration between
 ```
 
 Replace the paths and environment variables with your actual TestRail credentials and absolute path to wrapper.cjs.
+
+### Transport Modes
+
+This server supports two transport modes:
+
+#### 1. Stdio Transport (Default)
+For local use with Claude Desktop or other stdio-based MCP clients.
+
+```bash
+# Using npm scripts
+npm run start:stdio
+npm run dev:stdio
+
+# Or set environment variable
+MCP_TRANSPORT=stdio npm start
+```
+
+MCP client configuration (as shown above) remains unchanged.
+
+#### 2. HTTP Transport
+For remote deployments, Docker/Kubernetes, or web-based MCP clients. Uses JSON request/response and includes healthcheck endpoints.
+
+```bash
+# Using npm scripts
+npm run start:http
+npm run dev:http
+
+# Or set environment variable
+MCP_TRANSPORT=http npm start
+```
+
+**Environment Variables for HTTP Mode:**
+```bash
+MCP_TRANSPORT=http              # Enable HTTP transport
+MCP_HTTP_PORT=8080              # Port to listen on (default: 8080)
+MCP_HTTP_HOST=0.0.0.0           # Host to bind to (default: 0.0.0.0)
+TESTRAIL_URL=https://...        # Your TestRail instance URL
+TESTRAIL_USERNAME=your@email    # Your TestRail username
+TESTRAIL_PASSWORD=your-api-key  # Your TestRail API key
+```
+
+**HTTP Endpoints:**
+- `POST /mcp` - Send JSON-RPC messages and receive JSON responses
+- `DELETE /mcp` - Terminate session (requires `Mcp-Session-Id` header)
+- `GET /health` - Basic health check (always returns 200 OK)
+- `GET /health/ready` - Readiness check (always returns 200 OK)
+
+**Docker/Kubernetes Healthcheck Example:**
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 10
+  periodSeconds: 30
+
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+```
+
+**Testing HTTP Mode:**
+```bash
+# Start server
+npm run start:http
+
+# Check health
+curl http://localhost:8080/health
+
+# Test MCP endpoint (creates new session)
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+```
 
 ## 📚 Documentation
 
