@@ -2209,16 +2209,15 @@ export const tools: Tool[] = [
   },
   {
     name: "get_users",
-    description: "Retrieve all users who have access to a specific TestRail project. Returns a list of team members including their roles, permissions, and activity status within the project. Use this to see who can access project data, assign test cases, or review project team composition.",
+    description: "Retrieve users from TestRail. If project_id is provided, returns users who have access to that specific project. If project_id is omitted, returns all users in the TestRail instance (requires administrator privileges). Returns user details including roles, permissions, and activity status.",
     inputSchema: {
       type: "object",
       properties: {
         project_id: {
           type: "integer",
-          description: "The unique identifier of the TestRail project to get users for. Must be a valid, existing project ID."
+          description: "Optional: The unique identifier of the TestRail project to get users for. When provided, returns only users with access to this project. When omitted, returns all users (administrator access required)."
         }
-      },
-      required: ["project_id"]
+      }
     }
   },
 
