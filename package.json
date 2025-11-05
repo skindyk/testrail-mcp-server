@@ -6,8 +6,12 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsx src/index.ts",
+    "start": "node dist/main.js",
+    "start:stdio": "MCP_TRANSPORT=stdio node dist/main.js",
+    "start:http": "MCP_TRANSPORT=http node dist/main.js",
+    "dev": "tsx src/main.ts",
+    "dev:stdio": "MCP_TRANSPORT=stdio tsx src/main.ts",
+    "dev:http": "MCP_TRANSPORT=http tsx src/main.ts",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
@@ -23,11 +27,15 @@
   "author": "S.Kindyk",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.2",
+    "@modelcontextprotocol/sdk": "^1.21.0",
     "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "express": "^5.0.1",
     "form-data": "^4.0.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
     "@types/jest": "^29.0.0",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
