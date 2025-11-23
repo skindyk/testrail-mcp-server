@@ -7,6 +7,11 @@
 import { writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { createInterface } from 'readline';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const rl = createInterface({
     input: process.stdin,
@@ -60,8 +65,6 @@ async function collectArguments() {
     return args;
 }
 
-
-
 async function createPrompt() {
     console.log('🚀 TestRail MCP Server - Custom User Prompt Creator\n');
     console.log('This tool will help you create a custom prompt for the TestRail MCP Server.\n');
@@ -78,7 +81,7 @@ async function createPrompt() {
             }
 
             // Check if file already exists
-            const filePath = join('user-prompts', `${promptName}.json`);
+            const filePath = join('prompts', `${promptName}.json`);
             if (existsSync(filePath)) {
                 const overwrite = await question(`⚠️  Prompt '${promptName}' already exists. Overwrite? (y/N): `);
                 if (!overwrite.toLowerCase().startsWith('y')) {
@@ -129,7 +132,7 @@ async function createPrompt() {
         };
 
         // Write to file
-        const filePath = join('user-prompts', `${promptName}.json`);
+        const filePath = join('prompts', `${promptName}.json`);
         writeFileSync(filePath, JSON.stringify(promptConfig, null, 2));
 
         console.log(`\n✅ Successfully created prompt: ${filePath}`);
@@ -197,7 +200,7 @@ The script will guide you through creating a custom prompt with:
 - Arguments (required/optional)
 - Template with variable substitution
 
-Created prompts are saved to user-prompts/ directory and automatically
+Created prompts are saved to prompts/ directory and automatically
 loaded by the MCP server on restart.
 `);
     process.exit(0);

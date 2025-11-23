@@ -52,7 +52,12 @@ build/Release/
 lib-cov/
 
 # User-created prompts (exclude user customizations but keep examples)
+prompts/*.json
+!prompts/test-case-review.json
+!prompts/sprint-test-summary.json
+!prompts/test-plan-analysis.json
+!prompts/testrail-welcome.json
+!prompts/test-plan-analysis-server.json
+
+# Legacy user prompts (keep for backward compatibility)
 user-prompts/*.json
-!user-prompts/test-case-review.json
-!user-prompts/sprint-test-summary.json
-!user-prompts/test-plan-analysis.json

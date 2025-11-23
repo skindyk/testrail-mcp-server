@@ -1,45 +1,46 @@
 import { Prompt } from "@modelcontextprotocol/sdk/types.js";
-import { prompts as defaultPrompts } from "./index.js";
-import { UserPromptsLoader } from "./user-prompts.js";
+import { FilePromptsLoader } from "./file-prompts.js";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export class PromptLoader {
-  private userPromptsLoader: UserPromptsLoader;
+  private promptsLoader: FilePromptsLoader;
+  private legacyUserPromptsLoader: FilePromptsLoader;
   private allPrompts: Prompt[] = [];
 
   constructor() {
-    this.userPromptsLoader = new UserPromptsLoader();
+    // Main prompts directory
+    this.promptsLoader = new FilePromptsLoader(join(__dirname, '../../prompts'));
+    // Legacy user prompts directory (for backward compatibility)
+    this.legacyUserPromptsLoader = new FilePromptsLoader(join(__dirname, '../../user-prompts'));
+
     this.loadAllPrompts();
   }
 
   /**
-   * Load and combine default and user prompts
+   * Load and combine prompts
    */
   private loadAllPrompts(): void {
-    // Start with default prompts
-    this.allPrompts = [...defaultPrompts];
+    // Load main prompts
+    const mainPrompts = this.promptsLoader.loadPrompts();
+    this.allPrompts = [...mainPrompts];
 
-    // Add user prompts
-    const userPrompts = this.userPromptsLoader.loadUserPrompts();
-    
-    // Check for name conflicts and warn
-    const defaultNames = new Set(defaultPrompts.map(p => p.name));
-    const conflictingPrompts = userPrompts.filter(p => defaultNames.has(p.name));
-    
-    if (conflictingPrompts.length > 0) {
-      // Note: In MCP servers, we avoid console output as it interferes with the protocol
-      // Conflicts are handled by allowing user prompts to override defaults
-    }
+    // Load legacy user prompts
+    const legacyPrompts = this.legacyUserPromptsLoader.loadPrompts();
 
-    // Add user prompts (they will override defaults if names conflict)
-    this.allPrompts = this.allPrompts.filter(p => !userPrompts.some(up => up.name === p.name));
-    this.allPrompts.push(...userPrompts);
+    // Add legacy prompts (only if they don't exist in main prompts)
+    // This gives preference to the new 'prompts' folder if a user moves their files there
+    const mainNames = new Set(mainPrompts.map(p => p.name));
+    const uniqueLegacyPrompts = legacyPrompts.filter(p => !mainNames.has(p.name));
 
-    // Note: Logging removed to avoid MCP protocol interference
-    // Loaded ${defaultPrompts.length} default prompts and ${userPrompts.length} user prompts
+    this.allPrompts.push(...uniqueLegacyPrompts);
   }
 
   /**
-   * Get all available prompts (default + user)
+   * Get all available prompts
    */
   getAllPrompts(): Prompt[] {
     return this.allPrompts;
@@ -53,25 +54,27 @@ export class PromptLoader {
   }
 
   /**
-   * Check if a prompt is user-created
+   * Check if a prompt is user-created (legacy check, now all are file-based)
    */
   isUserPrompt(name: string): boolean {
-    return this.userPromptsLoader.isUserPrompt(name);
+    return this.promptsLoader.hasPrompt(name) || this.legacyUserPromptsLoader.hasPrompt(name);
   }
 
   /**
-   * Generate content for any prompt (default or user)
+   * Generate content for any prompt
    */
-  async generatePromptContent(name: string, args: any, defaultGenerator: (name: string, args: any) => Promise<string>): Promise<string> {
-    if (this.isUserPrompt(name)) {
-      return this.userPromptsLoader.generateUserPromptContent(name, args);
+  async generatePromptContent(name: string, args: any): Promise<string> {
+    if (this.promptsLoader.hasPrompt(name)) {
+      return this.promptsLoader.generatePromptContent(name, args);
+    } else if (this.legacyUserPromptsLoader.hasPrompt(name)) {
+      return this.legacyUserPromptsLoader.generatePromptContent(name, args);
     } else {
-      return defaultGenerator(name, args);
+      throw new Error(`Prompt not found: ${name}`);
     }
   }
 
   /**
-   * Reload all prompts (useful for development or if user adds new prompts)
+   * Reload all prompts
    */
   reload(): void {
     this.allPrompts = [];
@@ -82,11 +85,12 @@ export class PromptLoader {
    * Get prompts by category
    */
   getPromptsByCategory(): { default: Prompt[], user: Prompt[] } {
-    const defaultNames = new Set(defaultPrompts.map(p => p.name));
-    
+    // In the new unified structure, we can distinguish by checking if it came from the legacy folder
+    // or we can just consider everything as "available prompts"
+    // For now, let's return everything as default to simplify
     return {
-      default: this.allPrompts.filter(p => defaultNames.has(p.name)),
-      user: this.allPrompts.filter(p => !defaultNames.has(p.name))
+      default: this.allPrompts,
+      user: []
     };
   }
 
@@ -94,6 +98,6 @@ export class PromptLoader {
    * Initialize user prompts directory
    */
   initializeUserPrompts(): void {
-    this.userPromptsLoader.ensureUserPromptsDirectory();
+    this.promptsLoader.ensurePromptsDirectory();
   }
 }
