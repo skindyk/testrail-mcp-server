@@ -155,8 +155,7 @@ export class TestRailMCPServer {
         // Use the prompt loader to generate content (handles both default and user prompts)
         const promptContent = await this.promptLoader.generatePromptContent(
           name,
-          promptArgs || {},
-          this.generateDefaultPromptContent.bind(this)
+          promptArgs || {}
         );
 
         return {
@@ -522,40 +521,7 @@ export class TestRailMCPServer {
     }
   }
 
-  private async generateDefaultPromptContent(promptName: string, _args: any): Promise<string> {
-    switch (promptName) {
-      case "testrail-welcome":
-        return this.generateWelcomePrompt();
-      default:
-        throw new Error(`Unknown prompt: ${promptName}`);
-    }
-  }
 
-  private async generateWelcomePrompt(): Promise<string> {
-    return `# Welcome to TestRail MCP Server! 🚀
-
-The TestRail MCP Server gives you tools to interact with TestRail API. Here are some simple commands to get you started:
-
-## 🎯 Try These Basic Commands:
-
-### 1. See Your Projects
-\`\`\`
-Show me all TestRail projects
-\`\`\`
-
-### 2. Explore a Project (replace "My Project" with your project name)
-\`\`\`
-What test cases are in My Project?
-Show me test runs from My Project
-\`\`\`
-
-### 3. Check Test Results
-\`\`\`
-Get the latest test run results from My Project
-\`\`\`
-
-Start with \`Get TestRail projects\` to see what's available!`;
-  }
 
 
 

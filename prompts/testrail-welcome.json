@@ -1,0 +1,6 @@
+{
+    "name": "testrail-welcome",
+    "description": "This prompt provides a quick guide on how to use the MCP server tools and includes practical examples to get you started.",
+    "arguments": [],
+    "template": "# Welcome to TestRail MCP Server! 🚀\n\nThe TestRail MCP Server gives you tools to interact with TestRail API. Here are some simple commands to get you started:\n\n## 🎯 Try These Basic Commands:\n\n### 1. See Your Projects\n```\nShow me all TestRail projects\n```\n\n### 2. Explore a Project (replace \"My Project\" with your project name)\n```\nWhat test cases are in My Project?\nShow me test runs from My Project\n```\n\n### 3. Check Test Results\n```\nGet the latest test run results from My Project\n```\n\nStart with `Get TestRail projects` to see what's available!"
+}
